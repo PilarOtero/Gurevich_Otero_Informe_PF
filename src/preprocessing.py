@@ -4,7 +4,15 @@ from sklearn.impute import KNNImputer
 from sklearn.preprocessing import OneHotEncoder
 
 #FUNCIONES DE PREPROCESSING PARA ANTES DEL SPLIT
-def convertir_a_usd(dataset, tipo_de_cambio):
+def convertir_a_usd(dataset:pd.DataFrame, tipo_de_cambio:float):
+    """
+    Convierte el precio de las muestras de SUV que se definen en pesos a dolares 
+
+        Parámetros de entrada:
+            dataset(pd.DataFrame): dataset sobre el que se trabaja
+            tipo_de_cambio(float): 
+        
+    """
     dataset= dataset.copy()
     dataset['Precio'] = np.where(dataset['Moneda'] == '$', dataset['Precio'] / tipo_de_cambio, dataset['Precio'])
 
@@ -39,6 +47,29 @@ def crear_0km(dataset):
     dataset["0km"] = (dataset["Kilómetros"] == 0).astype(int)
     return dataset
 
+def descripcion_scoring(dataset:pd.DataFrame):
+    dataset = dataset.copy()
+    descripcion = dataset['Descripción'].str.lower()
+
+    palabras_positivas = ['único dueño', 'unico dueño', 'única mano', 'unica mano', 'primera mano', '1ra mano', 'service oficial', 'service al día', 'services completos', 'impecable', 'excelente estado', 'impoluto', 'cubiertas nuevas', 'garantía', 'listo para transferir', '0km', 'gomas nuevas', 'papeles al día', 'documentación al día', 'vtv al día', 'vtv vigente', 'vtv apto', 'km reales', 'guardado en cochera', 'nunca un golpe', 'sin detalles', 'distribución recién', 'cadena nueva', 'batería nueva']
+    palabras_negativas = ['no incluyó una descripción', 'chocado', 'reparado', 'motor no funciona', 'detalle de chapa', 'detalle a la vista']
+
+    #Por cada palabra positiva de la descripcion se convierte en 0/1 y se suman todas en score descripcion
+    descripciones_positivas = sum(descripcion.str.contains(positivas).astype(int) for positivas in palabras_positivas)
+    descripciones_negativas = sum(descripcion.str.contains(negativas).astype(int) for negativas in palabras_negativas)
+
+    score_raw = descripciones_positivas - descripciones_negativas
+    
+    #Definicion rango 1-10
+    dataset['Score Descripción'] = score_raw.clip(lower = 0)
+    #Se divide por el maximo del dataset (queda entre 0-1) y se multiplica por 9 para que quede entre 0-9
+    dataset['Score Descripción'] = 1 + (dataset['score descripcion'] / dataset['score descripcion'].max()) * 9
+    dataset['Score Descripción'] = dataset['score descripcion'].clip(upper = 10).round().astype(int)
+
+    dataset = dataset.drop(columns = ['Descripción'])
+
+    return dataset 
+
 def preprocesamiento_pre_split(dataset):
     dataset= dataset.copy()
     dataset = limpiar_col_suv_unnamed(dataset)
@@ -47,6 +78,7 @@ def preprocesamiento_pre_split(dataset):
     dataset = pasar_kilometros_numerico(dataset)
     dataset = convertir_a_usd(dataset, tipo_de_cambio=1100)
     dataset = crear_0km(dataset)
+    dataset = descripcion_scoring(dataset)
 
     return dataset
 
@@ -119,21 +151,39 @@ def completar_kilometros(X_train, X_val):
     return X_train, X_val
 
 #FEATURE ENGINEERING
-def crear_features_autos(set, current_year=2026):
+def crear_features_autos(set:pd.DataFrame, año_actual:int = 2026) -> pd.DataFrame:
     """
     Crea variables nuevas relevantes para explicar el precio.
+    - Antiguedad: años de uso aproximados
+    - Km_por_año: intensidad de uso del vehículo
 
-    - Antiguedad: años de uso aproximados.
-    - Km_por_año: intensidad de uso del vehículo.
+        Parámetros de entrada:
+            set(pd.DataFrame): subset del dataset sobre el que se generarán los nuevos features
+            año_actual(int): año actual 
+
+        Parámetros de salida:
+            set(pd.DataFrame): subset con las nuevas variables
      """
     set = set.copy()
 
-    set["Antiguedad"] = current_year - set["Año"]
+    set["Antiguedad"] = año_actual - set["Año"]
     set["Km_por_año"] = (set["Kilómetros"] / (set["Antiguedad"] + 1))
     
     return set
 
-def preprocesamiento_post_split(X_train, X_val):
+def preprocesamiento_post_split(X_train:pd.DataFrame, X_val:pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Aplica el preprocesamiento de los datos post split en entrenamiento y validación para la utilización de los parámetros del primero sobre ambos sets.
+    Se completan los valores faltantes para el color, cámara de retroceso, transmisión y kilómetros. Se aplica Feature Engineering para futuros usos.
+
+        Parámetros de entrada:
+            X_train(pd.DataFrame): matriz de features para entrenamiento
+            X_val(pd.DataFrame): matriz de features para validación
+       
+        Parámetros de salida:
+            X_train(pd.DataFrame): matriz de features para entrenamiento luego del preprocesamiento
+            X_val(pd.DataFrame): matriz de features para validación luego del preprocesamiento
+    """
     sets = [X_train, X_val]
 
     #COLOR -> completamos los valores faltantes con la moda por marca + modelo con los datos de TRAIN
@@ -173,9 +223,8 @@ def preprocesamiento_post_split(X_train, X_val):
 
     return X_train, X_val
 
-#################################################
 #ONE HOT LUEGO DE TODO EL PREPROCESSING 
-def onehot_encoding(X_train, X_val, categoricas) -> pd.DataFrame:
+def onehot_encoding(X_train, X_val, categoricas) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Aplica OneHot Encoding a las variables categoricas
 

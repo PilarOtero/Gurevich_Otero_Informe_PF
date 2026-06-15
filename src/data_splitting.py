@@ -1,17 +1,22 @@
-#import pandas as pd
-import numpy as np
+import pandas as pd 
 
-def train_val_split(data):
+def train_val_split(dataset:pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
-    divide dataset en 80% train y 20% validation
+    Divide dataset en 80% entrenamiento y 20% validacion
 
+        Parámetros de entrada:
+            dataset(pd.DataFrame): el dataset a ser separado en set de entrenamiento y de validación 
+
+        Parámetros de salida:
+            train(pd.DataFrame): subset de entrenamiento
+            validation(pd.DataFrame): subset de validación
     """
-    shuffled= data.sample(frac=1,  random_state= 42).reset_index(drop=True)
+    shuffled = dataset.sample(frac=1,  random_state= 42).reset_index(drop=True)
 
-    cut_idx= int(0.8* len(data)) #split
+    cut_idx = int(0.8* len(dataset)) #Split
 
-    train= shuffled.iloc[:cut_idx].copy() #80%
-    validation= shuffled.iloc[cut_idx:].copy()#20%
+    train = shuffled.iloc[:cut_idx].copy() #80%
+    validation = shuffled.iloc[cut_idx:].copy() #20%
     print(f'Train set shape: {train.shape}, \nValidation set shape: {validation.shape}')
 
     return train, validation
