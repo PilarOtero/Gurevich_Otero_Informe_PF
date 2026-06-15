@@ -17,6 +17,6 @@ def train_val_split(dataset:pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
 
     train = shuffled.iloc[:cut_idx].copy() #80%
     validation = shuffled.iloc[cut_idx:].copy() #20%
-    print(f'Train set shape: {train.shape}, \nValidation set shape: {validation.shape}')
+    print(f'Tamaño conjunto de entrenamiento -> {train.shape}, \nTamaño conjunto de validación -> {validation.shape}')
 
     return train, validation

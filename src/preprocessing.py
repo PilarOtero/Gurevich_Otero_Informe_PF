@@ -3,51 +3,110 @@ import pandas as pd
 from sklearn.impute import KNNImputer
 from sklearn.preprocessing import OneHotEncoder
 
-#FUNCIONES DE PREPROCESSING PARA ANTES DEL SPLIT
+#FUNCIONES DE PREPROCESSING PRE SPLIT
 def convertir_a_usd(dataset:pd.DataFrame, tipo_de_cambio:float):
     """
     Convierte el precio de las muestras de SUV que se definen en pesos a dolares 
 
         Parámetros de entrada:
             dataset(pd.DataFrame): dataset sobre el que se trabaja
-            tipo_de_cambio(float): 
+            tipo_de_cambio(float): tipo de cambio ARS/USD utilizado para la conversión peso a dólar
+
+        Parámetros de salida:
+            dataset(pd.DataFrame): dataset con la modificación realizada
         
     """
     dataset= dataset.copy()
     dataset['Precio'] = np.where(dataset['Moneda'] == '$', dataset['Precio'] / tipo_de_cambio, dataset['Precio'])
-
+    
     dataset = dataset.drop(columns = ['Moneda'])
+    
     return dataset
 
-def limpiar_col_suv_unnamed(dataset):
-    #Borra la columna UNNAMED y TIPO DE CARROCERIA al ser todas las mustras SUV (no aporta info)
+def limpiar_col_suv_unnamed(dataset:pd.DataFrame) -> pd.DataFrame:
+    """
+    Elimina las columnas 'Unnamed:0' y 'Tipo de Carroceria' del dataset
+
+        Parámetros de entrada:
+            dataset(pd.DataFrame): dataset sobre el que se trabaja
+    
+        Parámetros de salida:
+            dataset(pd.DataFrame): dataset con la modificación realizada
+    """
     dataset= dataset.copy()
+    #Borrar la columna UNNAMED y TIPO DE CARROCERIA al ser todas las mustras SUV (no aporta info)
     dataset = dataset.drop(columns=["Unnamed: 0", "Tipo de carrocería"])
     return dataset
 
-def limpiar_filas_motor(dataset):
-    #MOTOR -> eliminamos las muestras con valor nulo al ser pocas
+def limpiar_filas_motor(dataset:pd.DataFrame) -> pd.DataFrame:
+    """
+    Elimina las filas con valores nulos en la columna 'Motor' al ser pocas muestras en las que esto ocurre
+    
+        Parámetros de entrada:
+            dataset(pd.DataFrame): dataset sobre el que se trabaja
+    
+        Parámetros de salida:
+            dataset(pd.DataFrame): dataset con la modificación realizada
+    """
     dataset= dataset.copy()
     dataset = dataset.dropna(subset=['Motor'])
     return dataset
 
-def cambiar_5_puertas(dataset):
-    #Los valores mayores a 5 para las puertas, los reemplazamos por ese valor asumiendo que tienen el maximo valor posible
+def cambiar_5_puertas(dataset:pd.DataFrame) -> pd.DataFrame:
+    """
+    Reemplaza los valores inválidos de la columna 'Puertas' por 5 asumiendo que corresponden al máximo posible 
+        
+        Parámetros de entrada:
+            dataset(pd.DataFrame): dataset sobre el que se trabaja
+    
+        Parámetros de salida:
+            dataset(pd.DataFrame): dataset con la modificación realizada
+    """
     dataset= dataset.copy()
     dataset['Puertas'] = np.where(dataset['Puertas'].isin([2,3,4,5]), dataset['Puertas'], 5)
     return dataset
 
-def pasar_kilometros_numerico(dataset):
+def pasar_kilometros_numerico(dataset:pd.DataFrame) -> pd.DataFrame:
+    """
+    Convierte la columna 'Kilómetros' a numérica, reemplazando por NaN los valores que no puedan convertirse
+        
+        Parámetros de entrada:
+            dataset(pd.DataFrame): dataset sobre el que se trabaja
+    
+        Parámetros de salida:
+            dataset(pd.DataFrame): dataset con la modificación realizada
+    """
     dataset = dataset.copy()
     dataset["Kilómetros"] = pd.to_numeric(dataset["Kilómetros"], errors="coerce")
     return dataset
 
-def crear_0km(dataset):
+def crear_0km(dataset:pd.DataFrame) -> pd.DataFrame:
+    """
+    Crea la columna '0km' que indica si el vehículo es nuevo (1 si los kilómetros son 0, y 0 en caso contrario)
+        
+        Parámetros de entrada:
+            dataset(pd.DataFrame): dataset sobre el que se trabaja
+    
+        Parámetros de salida:
+            dataset(pd.DataFrame): dataset con la modificación realizada
+    """
     dataset = dataset.copy()
     dataset["0km"] = (dataset["Kilómetros"] == 0).astype(int)
     return dataset
 
-def descripcion_scoring(dataset:pd.DataFrame):
+def descripcion_scoring(dataset:pd.DataFrame) -> pd.DataFrame:
+    """
+    Genera un score numerico del 1 al 10 para cada muestra en base a su descripcion.
+    Asigna +1 por cada palabra positiva hallada y -1 por cada palabra negativa.
+    Se normaliza el score al rango [1,10] y se clippea en esos valores maximos.
+    Se elimina la columna 'Descripción'
+    
+        Parámetros de entrada:
+            dataset(pd.DataFrame): dataset sobre el que se trabaja
+    
+        Parámetros de salida:
+            dataset(pd.DataFrame): dataset con la modificación realizada
+    """
     dataset = dataset.copy()
     descripcion = dataset['Descripción'].str.lower()
 
@@ -60,17 +119,27 @@ def descripcion_scoring(dataset:pd.DataFrame):
 
     score_raw = descripciones_positivas - descripciones_negativas
     
-    #Definicion rango 1-10
+    #Definicion rango [1,10]
     dataset['Score Descripción'] = score_raw.clip(lower = 0)
     #Se divide por el maximo del dataset (queda entre 0-1) y se multiplica por 9 para que quede entre 0-9
-    dataset['Score Descripción'] = 1 + (dataset['score descripcion'] / dataset['score descripcion'].max()) * 9
-    dataset['Score Descripción'] = dataset['score descripcion'].clip(upper = 10).round().astype(int)
+    dataset['Score Descripción'] = 1 + (dataset['Score Descripción'] / dataset['Score Descripción'].max()) * 9
+    dataset['Score Descripción'] = dataset['Score Descripción'].clip(upper = 10).round().astype(int)
 
     dataset = dataset.drop(columns = ['Descripción'])
 
     return dataset 
 
-def preprocesamiento_pre_split(dataset):
+def preprocesamiento_pre_split(dataset:pd.DataFrame) -> pd.DataFrame:
+    """
+    Aplica el preprocesamiento inicial al dataset completo, antes de realizar el split en entrenamiento y validación
+    (por eso se aplican transformaciones basadas únicamente en los datos de cada muestra, sin riesgo de data leakeage)
+    
+        Parámetros de entrada:
+            dataset(pd.DataFrame): dataset sobre el que se trabaja
+    
+        Parámetros de salida:
+            dataset(pd.DataFrame): dataset con la modificación realizada
+    """
     dataset= dataset.copy()
     dataset = limpiar_col_suv_unnamed(dataset)
     dataset = limpiar_filas_motor(dataset)
@@ -82,8 +151,17 @@ def preprocesamiento_pre_split(dataset):
 
     return dataset
 
-#FUNCIONES DE PREPROCESSING PARA DESPUES DEL SPLIT -> se usan los valores de train
-def moda_color(X_train):
+#FUNCIONES DE PREPROCESSING POST SPLIT -> se usan los valores de train
+def moda_color(X_train:pd.DataFrame) -> pd.DataFrame:
+    """
+    Calcula el color más frecuente por combinación de 'Marca' y 'Modelo' (sobre el set de entrenamiento) para imputar valores nulos de la columna 'Color'
+
+        Parámetros de entrada:
+            X_train(pd.DataFrame): matriz de features de entrenamiento
+
+        Parámetros de salida:
+            (pd.DataFrame): DataFrame con las columnas 'Marca', 'Modelo', 'Color moda' 
+    """
     #Agrupa por marca y modelo y cuenta la cantidad de cada color y ordena de mayor a menor por grupo
     apariciones_color = X_train.groupby(['Marca', 'Modelo'])['Color'].value_counts()
     apariciones_color_dataframe = apariciones_color.reset_index()
@@ -92,7 +170,16 @@ def moda_color(X_train):
 
     return mas_frecuente[['Marca', 'Modelo', 'Color']].rename(columns = {'Color': 'Color moda'})
 
-def moda_camara(X_train):
+def moda_camara(X_train:pd.DataFrame) -> pd.DataFrame:
+    """
+    Calcula el valor más frecuente de 'Con cámara de retroceso' por combinación de 'Marca' y 'Año' (sobre el set de entrenamiento) para imputar valores nulos
+
+        Parámetros de entrada:
+            X_train(pd.DataFrame): matriz de features de entrenamiento
+
+        Parámetros de salida:
+            (pd.DataFrame): DataFrame con las columnas 'Marca', 'Año', 'Con cámara de retroceso moda' 
+    """
     #Agrupa por marca y año y cuenta la cantidad de cada cámara y ordena de mayor a menor por grupo
     apariciones_camara = X_train.groupby(['Marca', 'Año'])['Con cámara de retroceso'].value_counts()
     apariciones_camara_dataframe = apariciones_camara.reset_index()
@@ -101,17 +188,44 @@ def moda_camara(X_train):
 
     return mas_frecuente[['Marca', 'Año', 'Con cámara de retroceso']].rename(columns = {'Con cámara de retroceso': 'Con cámara de retroceso moda'})
 
-def knn_transmision(set, dummy_cols = None):
+def knn_transmision(set:pd.DataFrame, dummy_cols:list = None) -> tuple[pd.DataFrame, pd.Series, list[str]]:
+    """
+    Prepara la columna de 'Transmisión' para ser imputada con KNNImputer
+    Aplica get_dummies y marca como NaN las filas que originalmente eran nulas
+
+        Parámetros de entrada:
+            set(pd.DataFrame): subset del dataset 
+            dummy_cols(list): columnas dummy esperadas para alinear validación con entrenamiento (None si es entrenamiento)
+    
+        Parámetros de salida:
+            (pd.DataFrame): columnas dummy de transmisión + columna 'Año' para el KNN
+            null_mask(pd.Series): mascara booleana con True donde 'Transmisión' era nula
+            (list de str): nombres de las columnas dummy generadas
+    """
     null_mask = set['Transmisión'].isna()
     dummies = pd.get_dummies(set['Transmisión'], prefix='Trans_')
     if dummy_cols is not None:
         dummies = dummies.reindex(columns = dummy_cols, fill_value = 0)
     #Las filas que eran nulas las convertimos a NaN en las dummies para que KNN les impute valores
+    dummies = dummies.astype(float)
     dummies[null_mask] = np.nan
 
     return pd.concat([dummies, set[['Año']]], axis = 1), null_mask, dummies.columns.to_list()
 
-def transmision_sets(X_train, X_val):
+def transmision_sets(X_train:pd.DataFrame, X_val:pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Imputa los valores nulos de 'Transmisión' usando KNNImputer sobre las columnas dummy
+    Aprende los parámetros sobre train y los aplica a ambos sets
+    Decodifica el resultado del KNN al valor categórico original
+    
+        Parámetros de entrada:
+            X_train(pd.DataFrame): matriz de features para entrenamiento
+            X_val(pd.DataFrame): matriz de features para validación
+
+        Parámetros de salida:
+            X_train(pd.DataFrame): matriz de entrenamiento con 'Transmisión' sin nulos
+            X_val(pd.DataFrame): matriz de validación con 'Transmisión' sin nulos
+    """
     #Generar las columnas dummies
     knn_input_train, null_transmision_mask_train, transmision_columns = knn_transmision(X_train)
     knn_input_val, null_transmision_mask_val, _ = knn_transmision(X_val, dummy_cols = transmision_columns)
@@ -139,7 +253,20 @@ def transmision_sets(X_train, X_val):
 
     return X_train, X_val
 
-def completar_kilometros(X_train, X_val):
+def completar_kilometros(X_train:pd.DataFrame, X_val:pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Imputa los valores nulos de 'Kilómetros' usando la mediana agrupada por 'Año'
+    Aprende las medianas sobre train y las aplica a ambos sets.
+    Si un año de validación no existe en train, se usa la mediana global de train
+        
+        Parámetros de entrada:
+            X_train(pd.DataFrame): matriz de features para entrenamiento
+            X_val(pd.DataFrame): matriz de features para validación
+
+        Parámetros de salida:
+            X_train(pd.DataFrame): matriz de entrenamiento con 'Kilómetros' sin nulos
+            X_val(pd.DataFrame): matriz de validación con 'Kilómetros' sin nulos
+    """
     mediana_por_año = X_train.groupby('Año')['Kilómetros'].median()
     mediana_global = X_train['Kilómetros'].median()
 
@@ -223,7 +350,7 @@ def preprocesamiento_post_split(X_train:pd.DataFrame, X_val:pd.DataFrame) -> tup
 
     return X_train, X_val
 
-#ONE HOT LUEGO DE TODO EL PREPROCESSING 
+#ONE-HOT LUEGO DE TODO EL PREPROCESSING 
 def onehot_encoding(X_train, X_val, categoricas) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Aplica OneHot Encoding a las variables categoricas
@@ -248,7 +375,7 @@ def onehot_encoding(X_train, X_val, categoricas) -> tuple[pd.DataFrame, pd.DataF
     val_encoded = pd.DataFrame(encoder.transform(X_val[categoricas]), columns = nuevas_columnas, index = X_val.index)
 
     #Reemplazar las columnas originales por las nuevas
-    X_train = pd.concat([X_train.drop(columns = nuevas_columnas), train_encoded], axis = 1)
-    X_val = pd.concat([X_val.drop(columns = nuevas_columnas), val_encoded], axis = 1)
+    X_train = pd.concat([X_train.drop(columns = categoricas), train_encoded], axis = 1)
+    X_val = pd.concat([X_val.drop(columns = categoricas), val_encoded], axis = 1)
 
     return X_train, X_val
