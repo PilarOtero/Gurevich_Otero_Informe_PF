@@ -52,14 +52,20 @@ def limpiar_filas_motor(dataset:pd.DataFrame) -> pd.DataFrame:
     dataset = dataset.dropna(subset=['Motor'])
     return dataset
 
-def tratar_motor(dataset):
-    dataset['Motor'] = dataset['Motor'].str.extract(r'(\d+[.,]\d+)')[0].str.replace(',', '.').astype(float)
+def tratar_motor(dataset:pd.DataFrame)-> pd.DataFrame:
+    dataset= dataset.copy()
+    dataset['Motor'] = (
+        dataset['Motor']
+        .str.extract(r'(\d+[.,]\d+)')[0]
+        .str.replace(',', '.')
+        .astype(float)
+)    
+    dataset = dataset.dropna(subset=['Motor']) 
     return dataset
 
-def corregir_marcas(dataset):
+def corregir_marcas(dataset:pd.DataFrame) -> pd.DataFrame:
     dataset = dataset.copy()
-    dataset['Marca'] = dataset['Marca'].replace
-    ({'Hiunday': 'Hyundai', 
+    dataset['Marca'] = dataset['Marca'].replace({'Hiunday': 'Hyundai', 
       'hiunday': 'Hyundai', 
       'Rrenault': 'Renault', 
       'Jetur': 'Jetour',
@@ -239,7 +245,7 @@ def preprocesamiento_pre_split(dataset:pd.DataFrame) -> pd.DataFrame:
     dataset= dataset.copy()
     dataset = limpiar_cols(dataset)
     dataset = limpiar_filas_motor(dataset)
-    dataset = tratar_motor(dataset)
+    #dataset = tratar_motor(dataset)
     dataset = corregir_marcas(dataset)
     dataset = analizar_puertas(dataset)
     dataset = pasar_kilometros_numerico(dataset)
