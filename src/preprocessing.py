@@ -23,9 +23,9 @@ def convertir_a_usd(dataset:pd.DataFrame, tipo_de_cambio:float):
     
     return dataset
 
-def limpiar_col_suv_unnamed(dataset:pd.DataFrame) -> pd.DataFrame:
+def limpiar_cols(dataset:pd.DataFrame) -> pd.DataFrame:
     """
-    Elimina las columnas 'Unnamed:0' y 'Tipo de Carroceria' del dataset
+    Elimina las columnas 'Unnamed:0', 'SUV', 'Título', 'Versión' y 'Tipo de Carroceria' del dataset
 
         Parámetros de entrada:
             dataset(pd.DataFrame): dataset sobre el que se trabaja
@@ -35,7 +35,7 @@ def limpiar_col_suv_unnamed(dataset:pd.DataFrame) -> pd.DataFrame:
     """
     dataset= dataset.copy()
     #Borrar la columna UNNAMED y TIPO DE CARROCERIA al ser todas las mustras SUV (no aporta info)
-    dataset = dataset.drop(columns=["Unnamed: 0", "Tipo de carrocería"])
+    dataset = dataset.drop(columns=["Unnamed: 0", "Tipo de carrocería", "Título", "Versión"])
     return dataset
 
 def limpiar_filas_motor(dataset:pd.DataFrame) -> pd.DataFrame:
@@ -52,9 +52,18 @@ def limpiar_filas_motor(dataset:pd.DataFrame) -> pd.DataFrame:
     dataset = dataset.dropna(subset=['Motor'])
     return dataset
 
-def cambiar_5_puertas(dataset:pd.DataFrame) -> pd.DataFrame:
+def tratar_motor(dataset):
+    dataset['Motor'] = dataset['Motor'].str.extract(r'(\d+[.,]\d+)')[0].str.replace(',', '.').astype(float)
+    return dataset
+
+def corregir_marcas(dataset):
+    dataset = dataset.copy()
+    dataset['Marca'] = dataset['Marca'].replace({'Hiunday': 'Hyundai', 'hiunday': 'Hyundai', 'Rrenault': 'Renault', 'Jetur': 'Jetour', 
+                                                 'Vol': 'Volvo', 'D-S': 'D.S', 'DS AUTOMOBILES': 'D.S', 'Range Rover': 'Land Rover'})
+
+def analizar_puertas(dataset:pd.DataFrame) -> pd.DataFrame:
     """
-    Reemplaza los valores inválidos de la columna 'Puertas' por 5 asumiendo que corresponden al máximo posible 
+    Reemplaza los valores inválidos de la columna 'Puertas' por 5 en el caso donde puertas = 4, elimina las muestras con 2 puertas
         
         Parámetros de entrada:
             dataset(pd.DataFrame): dataset sobre el que se trabaja
@@ -63,7 +72,8 @@ def cambiar_5_puertas(dataset:pd.DataFrame) -> pd.DataFrame:
             dataset(pd.DataFrame): dataset con la modificación realizada
     """
     dataset= dataset.copy()
-    dataset['Puertas'] = np.where(dataset['Puertas'].isin([2,3,4,5]), dataset['Puertas'], 5)
+    dataset = dataset[dataset['Puertas'] != 2]
+    dataset['Puertas'] = np.where(dataset['Puertas'].isin([3,5]), dataset['Puertas'], 5)
     return dataset
 
 def pasar_kilometros_numerico(dataset:pd.DataFrame) -> pd.DataFrame:
@@ -110,8 +120,84 @@ def descripcion_scoring(dataset:pd.DataFrame) -> pd.DataFrame:
     dataset = dataset.copy()
     descripcion = dataset['Descripción'].str.lower()
 
-    palabras_positivas = ['único dueño', 'unico dueño', 'única mano', 'unica mano', 'primera mano', '1ra mano', 'service oficial', 'service al día', 'services completos', 'impecable', 'excelente estado', 'impoluto', 'cubiertas nuevas', 'garantía', 'listo para transferir', '0km', 'gomas nuevas', 'papeles al día', 'documentación al día', 'vtv al día', 'vtv vigente', 'vtv apto', 'km reales', 'guardado en cochera', 'nunca un golpe', 'sin detalles', 'distribución recién', 'cadena nueva', 'batería nueva']
-    palabras_negativas = ['no incluyó una descripción', 'chocado', 'reparado', 'motor no funciona', 'detalle de chapa', 'detalle a la vista']
+    palabras_positivas = [
+        # Originales
+        'único dueño', 'unico dueño', 'única mano', 'unica mano', 'primera mano', '1ra mano',
+        'service oficial', 'service al día', 'services completos',
+        'impecable', 'excelente estado', 'impoluto',
+        'cubiertas nuevas', 'garantía', 'listo para transferir', '0km', 'gomas nuevas',
+        'papeles al día', 'documentación al día', 'vtv al día', 'vtv vigente', 'vtv apto',
+        'km reales', 'guardado en cochera', 'nunca un golpe', 'sin detalles',
+        'distribución recién', 'cadena nueva', 'batería nueva',
+        # Forma femenina de dueño único (ej: "Unica dueña")
+        'única dueña', 'unica dueña',
+        # Sin tildes (vendedores suelen omitirlas)
+        'garantia', 'papeles al dia', 'documentacion al dia', 'vtv al dia', 'bateria nueva',
+        # Femenino / variantes de "listo para transferir"
+        'lista para transferir', 'lista para la transferencia', 'listo para la transferencia',
+        # Variantes de km reales
+        'kilometraje real', 'kilómetros reales', 'kilometros reales',
+        # Variantes de service / servicios
+        'servicios al día', 'servicios al dia', 'servicio oficial', 'servicios oficiales',
+        'todos los service', 'servis oficiales', 'servís oficiales',
+        # Estado general del vehículo
+        'buen estado', 'muy buen estado', 'perfecto estado',
+        'muy cuidado', 'muy cuidada', 'bien cuidado', 'bien cuidada',
+        'no hay que hacerle nada',
+        # Funcionamiento
+        'funciona todo', 'todo funciona', 'funcionando perfectamente',
+        # Cobertura mecánica / garantía de concesionario
+        'cobertura mecánica', 'cobertura mecanica',
+        # Neumáticos nuevos (variantes)
+        'neumáticos nuevos', 'neumaticos nuevos',
+        # Señales de calidad de agencia (femenino incluido)
+        'concesionario oficial', 'concesionaria oficial', 'agencia oficial', 'usados seleccionados',
+        # Estado excelente / variantes
+        'inmaculada', 'inmaculado', 'inmejorable estado',
+        'muy buenas condiciones', 'buenas condiciones',
+        # Documentación
+        'papeles en regla', 'titular al día', 'titular al dia',
+        # Sin tilde adicional de service
+        'service al dia',
+        # Cochera / garage
+        'guardado en garage', 'guardado en garaje', 'siempre en cochera',
+        # VTV femenino
+        'vtv apta',
+        # Servicios completos variantes
+        'todos los servicios',
+        # Dueño / titular
+        'solo dueño', 'único titular', 'unico titular', 'segundo dueño',
+        # Cubiertas / gomas casi nuevas
+        'casi nuevas', 'casi nuevo',
+        # Funcionamiento (variante sin -ndo)
+        'funciona perfectamente',
+        # Entrega inmediata (stock físico disponible)
+        'entrega inmediata',
+        'poco uso',
+        'cuotas',
+        'muy bueno', 'nada para hacerle'
+    ]
+    palabras_negativas = [
+        # Originales
+        'no incluyó una descripción', 'chocado', 'reparado', 'motor no funciona',
+        'detalle de chapa', 'detalle a la vista',
+        # Plural de "detalle a la vista" (ej: "detalles a la vista casoletas...")
+        'detalles a la vista',
+        # Daños de carrocería
+        'abolladura', 'abolladuras', 'leve choque',
+        'detalle de pintura', 'detalles de pintura',
+        'parabrisas rajado', 'parabrisas roto',
+        'rayado', 'rayones',
+        # Necesita reparación
+        'hay que reparar', 'hay q reparar', 'necesita reparacion', 'necesita reparación',
+        'falta arreglar', 'para reparar', 'a reparar',
+        # GNC (reduce valor de reventa)
+        'con gnc', 'tiene gnc', 'gnc instalado',
+        # Otros negativos
+        'accidentado', 'siniestrado', 'motor golpeado',
+        # Detalles cosméticos / estéticos
+        'detalles estéticos', 'detalles esteticos', 'algunos detalles'
+    ]
 
     #Por cada palabra positiva de la descripcion se convierte en 0/1 y se suman todas en score descripcion
     descripciones_positivas = sum(descripcion.str.contains(positivas).astype(int) for positivas in palabras_positivas)
@@ -119,6 +205,17 @@ def descripcion_scoring(dataset:pd.DataFrame) -> pd.DataFrame:
 
     score_raw = descripciones_positivas - descripciones_negativas
     
+    #ESTO AGREGO
+    for i, (idx, row) in enumerate(dataset[score_raw == 0].iterrows()):
+        descripcion = str(row['Descripción']).lower()
+        encontradas_pos = [p for p in palabras_positivas if p in descripcion]
+        encontradas_neg = [n for n in palabras_negativas if n in descripcion]
+        print(f"─── Muestra #{i} (índice {idx}) ───")
+        print(f"  Descripción: {row['Descripción']}")
+        print(f"  Palabras positivas encontradas: {encontradas_pos if encontradas_pos else 'ninguna'}")
+        print(f"  Palabras negativas encontradas: {encontradas_neg if encontradas_neg else 'ninguna'}")
+        print()
+
     #Definicion rango [1,10]
     dataset['Score Descripción'] = score_raw.clip(lower = 0)
     #Se divide por el maximo del dataset (queda entre 0-1) y se multiplica por 9 para que quede entre 0-9
@@ -141,11 +238,14 @@ def preprocesamiento_pre_split(dataset:pd.DataFrame) -> pd.DataFrame:
             dataset(pd.DataFrame): dataset con la modificación realizada
     """
     dataset= dataset.copy()
-    dataset = limpiar_col_suv_unnamed(dataset)
+    dataset = limpiar_cols(dataset)
     dataset = limpiar_filas_motor(dataset)
-    dataset = cambiar_5_puertas(dataset)
+    dataset = tratar_motor(dataset)
+    dataset = corregir_marcas(dataset)
+    dataset = analizar_puertas(dataset)
     dataset = pasar_kilometros_numerico(dataset)
-    dataset = convertir_a_usd(dataset, tipo_de_cambio=1100)
+    #Definimos el tipo de cambio promedio de mayo 2024 (fecha del dataset)
+    dataset = convertir_a_usd(dataset, tipo_de_cambio = 884.60)
     dataset = crear_0km(dataset)
     dataset = descripcion_scoring(dataset)
 
