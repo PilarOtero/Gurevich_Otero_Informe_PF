@@ -213,17 +213,7 @@ def descripcion_scoring(dataset:pd.DataFrame) -> pd.DataFrame:
     descripciones_negativas = sum(descripcion.str.contains(negativas).astype(int) for negativas in palabras_negativas)
 
     score_raw = descripciones_positivas - descripciones_negativas
-    
-    #ESTO AGREGO
-    for i, (idx, row) in enumerate(dataset[score_raw == 0].iterrows()):
-        descripcion = str(row['Descripción']).lower()
-        encontradas_pos = [p for p in palabras_positivas if p in descripcion]
-        encontradas_neg = [n for n in palabras_negativas if n in descripcion]
-        print(f"─── Muestra #{i} (índice {idx}) ───")
-        print(f"  Descripción: {row['Descripción']}")
-        print(f"  Palabras positivas encontradas: {encontradas_pos if encontradas_pos else 'ninguna'}")
-        print(f"  Palabras negativas encontradas: {encontradas_neg if encontradas_neg else 'ninguna'}")
-        print()
+
 
     #Definicion rango [1,10]
     dataset['Score Descripción'] = score_raw.clip(lower = 0)
