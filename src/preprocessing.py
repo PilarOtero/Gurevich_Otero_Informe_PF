@@ -58,8 +58,17 @@ def tratar_motor(dataset):
 
 def corregir_marcas(dataset):
     dataset = dataset.copy()
-    dataset['Marca'] = dataset['Marca'].replace({'Hiunday': 'Hyundai', 'hiunday': 'Hyundai', 'Rrenault': 'Renault', 'Jetur': 'Jetour', 
-                                                 'Vol': 'Volvo', 'D-S': 'D.S', 'DS AUTOMOBILES': 'D.S', 'Range Rover': 'Land Rover'})
+    dataset['Marca'] = dataset['Marca'].replace
+    ({'Hiunday': 'Hyundai', 
+      'hiunday': 'Hyundai', 
+      'Rrenault': 'Renault', 
+      'Jetur': 'Jetour',
+      'Vol': 'Volvo', 
+      'D-S': 'D.S', 
+      'DS AUTOMOBILES': 'D.S', 
+      'Range Rover': 'Land Rover'})
+    
+    return dataset
 
 def analizar_puertas(dataset:pd.DataFrame) -> pd.DataFrame:
     """
@@ -250,6 +259,9 @@ def preprocesamiento_pre_split(dataset:pd.DataFrame) -> pd.DataFrame:
     dataset = descripcion_scoring(dataset)
 
     return dataset
+
+
+
 
 #FUNCIONES DE PREPROCESSING POST SPLIT -> se usan los valores de train
 def moda_color(X_train:pd.DataFrame) -> pd.DataFrame:
