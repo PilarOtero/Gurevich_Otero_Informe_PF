@@ -54,13 +54,13 @@ def limpiar_filas_motor(dataset:pd.DataFrame) -> pd.DataFrame:
 
 def tratar_motor(dataset:pd.DataFrame)-> pd.DataFrame:
     dataset= dataset.copy()
-    dataset['Motor'] = (
+    extraido = (
         dataset['Motor']
         .str.extract(r'(\d+[.,]\d+)')[0]
         .str.replace(',', '.')
-        .astype(float)
-)    
-    dataset = dataset.dropna(subset=['Motor']) 
+        .astype(float))    
+    dataset['Motor'] = extraido.combine_first(dataset['Motor'])
+    #dataset = dataset.dropna(subset=['Motor']) 
     return dataset
 
 def corregir_marcas(dataset:pd.DataFrame) -> pd.DataFrame:
@@ -69,7 +69,7 @@ def corregir_marcas(dataset:pd.DataFrame) -> pd.DataFrame:
       'hiunday': 'Hyundai', 
       'Rrenault': 'Renault', 
       'Jetur': 'Jetour',
-      'Vol': 'Volvo', 
+      'Vol': 'Volkswagen', 
       'D-S': 'D.S', 
       'DS AUTOMOBILES': 'D.S', 
       'Range Rover': 'Land Rover'})
@@ -242,14 +242,19 @@ def preprocesamiento_pre_split(dataset:pd.DataFrame) -> pd.DataFrame:
             dataset(pd.DataFrame): dataset con la modificación realizada
     """
     dataset = dataset.copy()
+    print("Original:          ", dataset.shape[0])
 
     #Considerando que las concesionarias ya tienen modelos de 2025 a la venta
     dataset = dataset[dataset['Año'] <= 2025]
+    print("Post filtro año:   ", dataset.shape[0])
     dataset = limpiar_cols(dataset)
     dataset = limpiar_filas_motor(dataset)
+    print("Post motor nulos:  ", dataset.shape[0])
     dataset = tratar_motor(dataset)
+    print("Post tratar motor: ", dataset.shape[0])
     dataset = corregir_marcas(dataset)
     dataset = analizar_puertas(dataset)
+    print("Post puertas:      ", dataset.shape[0])
     dataset = pasar_kilometros_numerico(dataset)
     #Definimos el tipo de cambio promedio de mayo 2024 (fecha del dataset)
     dataset = convertir_a_usd(dataset, tipo_de_cambio = 884.60)
@@ -451,10 +456,16 @@ def preprocesamiento_post_split(X_train:pd.DataFrame, X_val:pd.DataFrame) -> tup
     #KILOMETROS -> mediana agrupada por año 
     X_train, X_val = completar_kilometros(X_train, X_val)
 
+    print(X_train['Kilómetros'].isna().sum())
+    print(X_val['Kilómetros'].isna().sum())
+
+
     #FEATURE ENGINEERING
     X_train = crear_features_autos(X_train)
     X_val = crear_features_autos(X_val)
-
+    print('post crear features ')
+    print(X_train['Kilómetros'].isna().sum())
+    print(X_val['Kilómetros'].isna().sum())
     return X_train, X_val
 
 #ONE-HOT LUEGO DE TODO EL PREPROCESSING 
