@@ -28,3 +28,6 @@ def rmse(y_true:np.array,y_pred:np.array) -> float:
             (float): la raíz del MSE, siempre positiva
     """
     return np.sqrt(mse(y_true,y_pred))
+
+def r2(y_true, y_pred):
+    pass

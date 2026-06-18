@@ -25,7 +25,7 @@ def convertir_a_usd(dataset:pd.DataFrame, tipo_de_cambio:float):
 
 def limpiar_cols(dataset:pd.DataFrame) -> pd.DataFrame:
     """
-    Elimina las columnas 'Unnamed:0', 'SUV', 'Título', 'Versión' y 'Tipo de Carroceria' del dataset
+    Elimina las columnas 'Unnamed:0', 'SUV', 'Título' y 'Tipo de Carroceria' del dataset
 
         Parámetros de entrada:
             dataset(pd.DataFrame): dataset sobre el que se trabaja
@@ -35,7 +35,7 @@ def limpiar_cols(dataset:pd.DataFrame) -> pd.DataFrame:
     """
     dataset= dataset.copy()
     #Borrar la columna UNNAMED y TIPO DE CARROCERIA al ser todas las mustras SUV (no aporta info)
-    dataset = dataset.drop(columns=["Unnamed: 0", "Tipo de carrocería", "Título", "Versión"])
+    dataset = dataset.drop(columns=["Unnamed: 0", "Tipo de carrocería", "Título"])
     return dataset
 
 def limpiar_filas_motor(dataset:pd.DataFrame) -> pd.DataFrame:
@@ -230,6 +230,58 @@ def descripcion_scoring(dataset:pd.DataFrame) -> pd.DataFrame:
 
     return dataset 
 
+def flags_version(dataset:pd.DataFrame) -> pd.DataFrame:
+    """
+    Extrae keywords de la columna 'Versión' y crea columnas binarias (0/1) por cada una.
+    Elimina la columna original 'Versión'.
+
+        Parámetros de entrada:
+            dataset(pd.DataFrame): dataset sobre el que se trabaja
+
+        Parámetros de salida:
+            dataset(pd.DataFrame): dataset con columnas version_<keyword> y sin 'Versión'
+    """
+    dataset = dataset.copy()
+
+    keywords = [
+        "limited", "sport", "sr", "srv", "titanium", "executive",
+        "highline", "comfortline", "comfort", "trendline", "premium", "elite",
+        "rubicon", "laredo", "overland",
+        "4x4", "4wd", "awd", "at", "at6", "mt", "cvt", "turbo", "tdi", "tsi",
+        "plus", "pro", "pack", "fwd",
+        "ltz", "exclusive", "feline", "allure", "advance", "longitude",
+        "sense", "xei", "active", "gt",
+        "se", "freestyle", "privilege", "ph2", "dynamique", "zen",
+        "intens", "feel", "4matic", "expression", "xls",
+        "confort", "xdrive", "xline", "tfsi", "sxt", "sel", "amg",
+        "luxury", "techo", "luxe", "life", "intelligent",
+        "ex", "vx", "crossway", "classic", "s", "gl",
+        "v6", "lt", "prado",
+        "pop", "lx", "live", "rock"
+    ]
+
+    keywords_exactos = {
+        "at", "at6", "mt", "sr", "srv", "awd", "4x4", "4wd", "pro", "gt",
+        "fwd", "ltz", "xei", "se", "ph2", "zen", "xls", "xline", "sxt", "sel", "amg",
+        "life", "ex", "vx", "s", "gl", "v6", "lt", "pop", "lx"
+    }
+
+    for kw in keywords:
+        patron = rf"\b{kw}\b" if kw in keywords_exactos else kw
+        dataset[f"version_{kw}"] = (
+            dataset["Versión"].str.lower().str.contains(patron, na=False).astype(int)
+        )
+
+    dataset = dataset.drop(columns=["Versión"])
+    return dataset
+
+def unir_colores(dataset):
+    dataset = dataset.copy()
+    dataset['Color'] = dataset['Color'].str.low().replace({
+        'blanca': 'blanco',
+        'negra': 'negro'})
+    return dataset
+
 def preprocesamiento_pre_split(dataset:pd.DataFrame) -> pd.DataFrame:
     """
     Aplica el preprocesamiento inicial al dataset completo, antes de realizar el split en entrenamiento y validación
@@ -242,24 +294,21 @@ def preprocesamiento_pre_split(dataset:pd.DataFrame) -> pd.DataFrame:
             dataset(pd.DataFrame): dataset con la modificación realizada
     """
     dataset = dataset.copy()
-    print("Original:          ", dataset.shape[0])
 
     #Considerando que las concesionarias ya tienen modelos de 2025 a la venta
     dataset = dataset[dataset['Año'] <= 2025]
-    print("Post filtro año:   ", dataset.shape[0])
     dataset = limpiar_cols(dataset)
     dataset = limpiar_filas_motor(dataset)
-    print("Post motor nulos:  ", dataset.shape[0])
     dataset = tratar_motor(dataset)
-    print("Post tratar motor: ", dataset.shape[0])
     dataset = corregir_marcas(dataset)
     dataset = analizar_puertas(dataset)
-    print("Post puertas:      ", dataset.shape[0])
     dataset = pasar_kilometros_numerico(dataset)
     #Definimos el tipo de cambio promedio de mayo 2024 (fecha del dataset)
     dataset = convertir_a_usd(dataset, tipo_de_cambio = 884.60)
     dataset = crear_0km(dataset)
     dataset = descripcion_scoring(dataset)
+    dataset = flags_version(dataset)
+    dataset = unir_colores(dataset)
 
     return dataset
 
@@ -405,7 +454,7 @@ def crear_features_autos(set:pd.DataFrame, año_actual:int = 2024) -> pd.DataFra
      """
     set = set.copy()
 
-    set["Antiguedad"] = año_actual - set["Año"]
+    set["Antiguedad"] = (año_actual - set["Año"]).clip(lower = 0)
     set["Km_por_año"] = (set["Kilómetros"] / (set["Antiguedad"] + 1))
     
     return set
@@ -456,16 +505,10 @@ def preprocesamiento_post_split(X_train:pd.DataFrame, X_val:pd.DataFrame) -> tup
     #KILOMETROS -> mediana agrupada por año 
     X_train, X_val = completar_kilometros(X_train, X_val)
 
-    print(X_train['Kilómetros'].isna().sum())
-    print(X_val['Kilómetros'].isna().sum())
-
-
     #FEATURE ENGINEERING
     X_train = crear_features_autos(X_train)
     X_val = crear_features_autos(X_val)
-    print('post crear features ')
-    print(X_train['Kilómetros'].isna().sum())
-    print(X_val['Kilómetros'].isna().sum())
+
     return X_train, X_val
 
 #ONE-HOT LUEGO DE TODO EL PREPROCESSING 
