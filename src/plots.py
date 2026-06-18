@@ -203,7 +203,7 @@ def plot_antiguedad_km_vs_precio(df, target="Precio"):
     data_plot["Log_Precio"] = np.log1p(data_plot[target])
     data_plot["Log_Km"] = np.log1p(data_plot["Kilómetros"])
 
-    fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+    fig, axes = plt.subplots(1, 2, figsize=(18, 5))
 
     # Antiguedad vs Log_Precio
     sns.scatterplot(
@@ -218,19 +218,6 @@ def plot_antiguedad_km_vs_precio(df, target="Precio"):
     axes[0].set_xlabel("Antigüedad (años)")
     axes[0].set_ylabel("Log(Precio)")
 
-    # Log_Km vs Log_Precio
-    sns.scatterplot(
-        data=data_plot,
-        x="Log_Km",
-        y="Log_Precio",
-        alpha=0.25,
-        s=18,
-        ax=axes[1]
-    )
-    axes[1].set_title("Kilometraje vs Precio")
-    axes[1].set_xlabel("Log(Kilómetros)")
-    axes[1].set_ylabel("Log(Precio)")
-
     # Boxplot por rangos de antigüedad
     data_plot["Rango antigüedad"] = pd.cut(
         data_plot["Antiguedad"],
@@ -241,11 +228,11 @@ def plot_antiguedad_km_vs_precio(df, target="Precio"):
         data=data_plot,
         x="Rango antigüedad",
         y=target,
-        ax=axes[2]
+        ax=axes[1]
     )
-    axes[2].set_title("Precio según rango de antigüedad")
-    axes[2].set_xlabel("Antigüedad (años)")
-    axes[2].set_ylabel("Precio")
+    axes[1].set_title("Precio según rango de antigüedad")
+    axes[1].set_xlabel("Antigüedad (años)")
+    axes[1].set_ylabel("Precio")
 
     plt.suptitle("Efecto de antigüedad y kilometraje sobre el precio", fontsize=16, fontweight="bold")
     plt.tight_layout(rect=[0, 0, 1, 0.95])

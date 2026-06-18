@@ -277,10 +277,45 @@ def flags_version(dataset:pd.DataFrame) -> pd.DataFrame:
 
 def unir_colores(dataset):
     dataset = dataset.copy()
-    dataset['Color'] = dataset['Color'].str.low().replace({
-        'blanca': 'blanco',
-        'negra': 'negro'})
+    dataset['Color'] = dataset['Color'].str.lower().replace({
+        # Blanco
+        'blanca': 'blanco', 'summit white': 'blanco',
+        'mineralweiss metallic': 'blanco', 'blanco nacre tricapa': 'blanco',
+        'blanco banchisa bicolor negro': 'blanco', 'blanco glaciar': 'blanco',
+        # Negro
+        'negra': 'negro', 'carbon black': 'negro',
+        'black meet kettle': 'negro', 'noir perla nera': 'negro',
+        # Gris
+        'gris oscuro': 'gris', 'acero': 'gris', 'grafito': 'gris',
+        'gray': 'gris', 'cendre': 'gris', 'gris plata': 'gris',
+        'gris selenium': 'gris', 'gris artense': 'gris', 'gris titane': 'gris',
+        'gris laque': 'gris', 'gris indy': 'gris', 'gris silverstone': 'gris',
+        'gris estrella': 'gris', 'gris platino': 'gris',
+        'granite crysta bc': 'gris', 'granite crystal bc': 'gris',
+        'skyscraper grau metallic': 'gris',
+        # Plateado
+        'plata': 'plateado', 'plata bari': 'plateado', 'prata bari+tet vulc': 'plateado',
+        # Rojo
+        'rojo sunset metalizado': 'rojo',
+        # Azul
+        'blue': 'azul', 'steel_blue': 'azul', 'celeste': 'azul',
+        # Marrón
+        'marrón oscuro': 'marrón', 'marrón claro': 'marrón', 'marron kodiak': 'marrón',
+        # Beige
+        'beige techo negro': 'beige', 'café': 'beige',
+        # Dorado
+        'champaing': 'dorado', 'cobre': 'dorado',
+        # Verde
+        'verde oscuro': 'verde',
+        # Violeta
+        'morado': 'violeta', 'morado oscuro': 'violeta',
+        # Amarillo
+        'amarrillo': 'amarillo',
+        # Otro
+        'moundaz': 'otro',
+    })
     return dataset
+
 
 def preprocesamiento_pre_split(dataset:pd.DataFrame) -> pd.DataFrame:
     """
