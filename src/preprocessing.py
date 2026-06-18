@@ -280,14 +280,13 @@ def unir_colores(dataset):
     dataset['Color'] = dataset['Color'].str.lower().replace({
         # Blanco
         'blanca': 'blanco', 'summit white': 'blanco',
-        'mineralweiss metallic': 'blanco', 'blanco nacre tricapa': 'blanco',
+        'mineralweiss metallic': 'blanco', 'blanco nacre tricapa': 'blanco', 'blanco banquise': 'blanco',
         'blanco banchisa bicolor negro': 'blanco', 'blanco glaciar': 'blanco',
         # Negro
         'negra': 'negro', 'carbon black': 'negro',
         'black meet kettle': 'negro', 'noir perla nera': 'negro',
         # Gris
-        'gris oscuro': 'gris', 'acero': 'gris', 'grafito': 'gris',
-        'gray': 'gris', 'cendre': 'gris', 'gris plata': 'gris',
+        'gris oscuro': 'gris', 'acero': 'gris', 'grafito': 'gris', 'gray': 'gris', 'cendre': 'gris', 'gris plata': 'gris',
         'gris selenium': 'gris', 'gris artense': 'gris', 'gris titane': 'gris',
         'gris laque': 'gris', 'gris indy': 'gris', 'gris silverstone': 'gris',
         'gris estrella': 'gris', 'gris platino': 'gris',
