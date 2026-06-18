@@ -252,14 +252,18 @@ def plot_antiguedad_km_vs_precio(df, target="Precio"):
     plt.show()
 
 def plot_dispersion_por_marca(df, target="Precio", top_n=15):
-    cv = df.groupby("Marca")[target].agg(["std", "mean"])
-    cv["cv"] = cv["std"] / cv["mean"]
-    cv = cv.sort_values("cv").head(top_n)
+    marcas_validas = df['Marca'].value_counts()
+    marcas_validas = marcas_validas[marcas_validas >= 35].index
+    data_filtrado = df[df['Marca'].isin(marcas_validas)]
 
-    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+    cv = data_filtrado.groupby('Marca')['Precio'].agg(['std', 'mean'])
+    cv["cv"] = cv["std"] / cv["mean"]
+    cv = cv.sort_values("cv", ascending = False)
+
+    _, axes = plt.subplots(1, 2, figsize=(20, 8))
 
     # Coeficiente de variación
-    sns.barplot(x=cv["cv"], y=cv.index, ax=axes[0])
+    sns.barplot(x = cv["cv"], y = cv.index, ax = axes[0])
     axes[0].set_title("Coeficiente de variación por marca (menor = más uniforme)")
     axes[0].set_xlabel("CV (std / mean)")
     axes[0].set_ylabel("Marca")
@@ -268,9 +272,9 @@ def plot_dispersion_por_marca(df, target="Precio", top_n=15):
     marcas_low_cv = cv.index.tolist()
     sns.boxplot(
         data=df[df["Marca"].isin(marcas_low_cv)],
-        x="Marca",
+        x = "Marca",
         y=target,
-        order=marcas_low_cv,
+        order = cv.index,
         ax=axes[1]
     )
     axes[1].set_title("Distribución de precios (marcas con menor dispersión)")
