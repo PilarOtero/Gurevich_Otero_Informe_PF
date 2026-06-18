@@ -220,7 +220,6 @@ def descripcion_scoring(dataset:pd.DataFrame) -> pd.DataFrame:
 
     score_raw = descripciones_positivas - descripciones_negativas
 
-
     #Definicion rango [1,10]
     dataset['Score Descripción'] = score_raw.clip(lower = 0)
     #Se divide por el maximo del dataset (queda entre 0-1) y se multiplica por 9 para que quede entre 0-9
@@ -242,10 +241,13 @@ def preprocesamiento_pre_split(dataset:pd.DataFrame) -> pd.DataFrame:
         Parámetros de salida:
             dataset(pd.DataFrame): dataset con la modificación realizada
     """
-    dataset= dataset.copy()
+    dataset = dataset.copy()
+
+    #Considerando que las concesionarias ya tienen modelos de 2025 a la venta
+    dataset = dataset[dataset['Año'] <= 2025]
     dataset = limpiar_cols(dataset)
     dataset = limpiar_filas_motor(dataset)
-    #dataset = tratar_motor(dataset)
+    dataset = tratar_motor(dataset)
     dataset = corregir_marcas(dataset)
     dataset = analizar_puertas(dataset)
     dataset = pasar_kilometros_numerico(dataset)
@@ -255,9 +257,6 @@ def preprocesamiento_pre_split(dataset:pd.DataFrame) -> pd.DataFrame:
     dataset = descripcion_scoring(dataset)
 
     return dataset
-
-
-
 
 #FUNCIONES DE PREPROCESSING POST SPLIT -> se usan los valores de train
 def moda_color(X_train:pd.DataFrame) -> pd.DataFrame:
@@ -386,7 +385,7 @@ def completar_kilometros(X_train:pd.DataFrame, X_val:pd.DataFrame) -> tuple[pd.D
     return X_train, X_val
 
 #FEATURE ENGINEERING
-def crear_features_autos(set:pd.DataFrame, año_actual:int = 2026) -> pd.DataFrame:
+def crear_features_autos(set:pd.DataFrame, año_actual:int = 2024) -> pd.DataFrame:
     """
     Crea variables nuevas relevantes para explicar el precio.
     - Antiguedad: años de uso aproximados

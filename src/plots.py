@@ -1,19 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pandas as pd
 
-
-def plot_distribuciones_por_categoria(
-    df,
-    categoria,
-    variable="Log_Precio",
-    top_n=6,
-    bins=30
-):
+def plot_distribuciones_por_categoria(df, categoria, variable = "Log_Precio", top_n = 6, bins = 30):
     categorias = df[categoria].value_counts().head(top_n).index
     rows = int(np.ceil(top_n / 3))
 
-    fig, axes = plt.subplots(rows, 3, figsize=(16, 5 * rows))
+    _, axes = plt.subplots(rows, 3, figsize=(16, 5 * rows))
     axes = axes.flatten()
 
     for i, cat in enumerate(categorias):
@@ -41,7 +35,7 @@ def plot_distribuciones_por_categoria(
     plt.show()
 
 
-def eda_visualizacion_suvs(df, target="Precio", current_year=2026):
+def eda_visualizacion_suvs(df, target = "Precio", current_year = 2024):
     data = df.copy()
 
     sns.set_theme(style="whitegrid")
@@ -202,4 +196,88 @@ def eda_visualizacion_suvs(df, target="Precio", current_year=2026):
 
     plt.title("Matriz de correlación")
     plt.tight_layout()
+    plt.show()
+
+def plot_antiguedad_km_vs_precio(df, target="Precio"):
+    data_plot = data_plot = df[df["Antiguedad"] <= 50].copy()
+    data_plot["Log_Precio"] = np.log1p(data_plot[target])
+    data_plot["Log_Km"] = np.log1p(data_plot["Kilómetros"])
+
+    fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+
+    # Antiguedad vs Log_Precio
+    sns.scatterplot(
+        data=data_plot,
+        x="Antiguedad",
+        y="Log_Precio",
+        alpha=0.25,
+        s=18,
+        ax=axes[0]
+    )
+    axes[0].set_title("Antigüedad vs Precio")
+    axes[0].set_xlabel("Antigüedad (años)")
+    axes[0].set_ylabel("Log(Precio)")
+
+    # Log_Km vs Log_Precio
+    sns.scatterplot(
+        data=data_plot,
+        x="Log_Km",
+        y="Log_Precio",
+        alpha=0.25,
+        s=18,
+        ax=axes[1]
+    )
+    axes[1].set_title("Kilometraje vs Precio")
+    axes[1].set_xlabel("Log(Kilómetros)")
+    axes[1].set_ylabel("Log(Precio)")
+
+    # Boxplot por rangos de antigüedad
+    data_plot["Rango antigüedad"] = pd.cut(
+        data_plot["Antiguedad"],
+        bins=[0, 2, 5, 10, 15, 20, 100],
+        labels=["0-2", "3-5", "6-10", "11-15", "16-20", "20+"]
+    )
+    sns.boxplot(
+        data=data_plot,
+        x="Rango antigüedad",
+        y=target,
+        ax=axes[2]
+    )
+    axes[2].set_title("Precio según rango de antigüedad")
+    axes[2].set_xlabel("Antigüedad (años)")
+    axes[2].set_ylabel("Precio")
+
+    plt.suptitle("Efecto de antigüedad y kilometraje sobre el precio", fontsize=16, fontweight="bold")
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.show()
+
+def plot_dispersion_por_marca(df, target="Precio", top_n=15):
+    cv = df.groupby("Marca")[target].agg(["std", "mean"])
+    cv["cv"] = cv["std"] / cv["mean"]
+    cv = cv.sort_values("cv").head(top_n)
+
+    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+
+    # Coeficiente de variación
+    sns.barplot(x=cv["cv"], y=cv.index, ax=axes[0])
+    axes[0].set_title("Coeficiente de variación por marca (menor = más uniforme)")
+    axes[0].set_xlabel("CV (std / mean)")
+    axes[0].set_ylabel("Marca")
+
+    # Boxplot de las marcas con menor dispersión
+    marcas_low_cv = cv.index.tolist()
+    sns.boxplot(
+        data=df[df["Marca"].isin(marcas_low_cv)],
+        x="Marca",
+        y=target,
+        order=marcas_low_cv,
+        ax=axes[1]
+    )
+    axes[1].set_title("Distribución de precios (marcas con menor dispersión)")
+    axes[1].set_xlabel("Marca")
+    axes[1].set_ylabel("Precio")
+    axes[1].tick_params(axis="x", rotation=45)
+
+    plt.suptitle("Dispersión de precios por marca", fontsize=16, fontweight="bold")
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
