@@ -406,8 +406,8 @@ def preprocesamiento_pre_split(dataset:pd.DataFrame) -> pd.DataFrame:
     dataset = completar_color_descripcion(dataset)
     dataset = unir_colores(dataset)
     
-    #Definimos el tipo de cambio promedio de mayo 2024 (fecha del dataset)
-    dataset = convertir_a_usd(dataset, tipo_de_cambio = 884.60)
+    #Definimos el tipo de cambio promedio de mayo 2025 (fecha del dataset)
+    dataset = convertir_a_usd(dataset, tipo_de_cambio = 1264.0)
     
     dataset = clasificar_version(dataset)
     dataset = tratar_camara_retroceso(dataset)
@@ -571,7 +571,7 @@ def completar_motor_litros(X_train: pd.DataFrame, X_val: pd.DataFrame) -> tuple[
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #FEATURE ENGINEERING
-def crear_features_autos(set:pd.DataFrame, año_actual:int = 2024) -> pd.DataFrame:
+def crear_features_autos(set:pd.DataFrame, año_actual:int = 2025) -> pd.DataFrame:
     """
     Crea variables nuevas relevantes para explicar el precio.
     - Antiguedad: años de uso aproximados
@@ -620,7 +620,6 @@ def preprocesamiento_post_split(X_train: pd.DataFrame, X_val: pd.DataFrame) -> t
     X_val = crear_features_autos(X_val)
 
     return X_train, X_val
-
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #ONE-HOT LUEGO DE TODO EL PREPROCESSING 

@@ -55,7 +55,7 @@ def plot_distribuciones_por_categoria(
     plt.show()
 
 
-def eda_visualizacion_suvs(df, target="Precio", current_year=2024):
+def eda_visualizacion_suvs(df, target="Precio", current_year=2025):
     data = df.copy()
 
     sns.set_theme(style="whitegrid")
@@ -161,49 +161,6 @@ def eda_visualizacion_suvs(df, target="Precio", current_year=2024):
             top_n= 6
         )
 
-    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
-
-    # Kilómetros vs Precio
-    sns.regplot(
-        data=data_plot.dropna(subset=["Log_Km", "Log_Precio"]),
-        x="Log_Km",
-        y="Log_Precio",
-        color=CELESTE,
-        scatter_kws={"alpha": 0.15, "s": 12},
-        line_kws={"linewidth": 2},
-        ax=axes[0]
-    )
-
-    axes[0].set_title("Kilometraje vs Precio")
-    axes[0].set_xlabel("Log(Kilómetros)")
-    axes[0].set_ylabel("Log(Precio)")
-
-    # Antigüedad vs Precio
-    data_ant = data_plot[data_plot["Antiguedad"] <= 50].copy()
-
-
-    sns.regplot(
-        data=data_ant,
-        x="Antiguedad",
-        y="Log_Precio",
-        color=LILA,
-        scatter_kws={"alpha": 0.15, "s": 12},
-        line_kws={"linewidth": 2},
-        ax=axes[1]
-    )
-
-    axes[1].set_title("Antigüedad vs Precio")
-    axes[1].set_xlabel("Antigüedad (años)")
-    axes[1].set_ylabel("Log(Precio)")
-
-    plt.suptitle(
-        "Relación del precio con kilometraje y antigüedad",
-        fontsize=16,
-        fontweight="bold"
-    )
-
-    plt.tight_layout(rect=[0, 0, 1, 0.95])
-    plt.show()
 
     # ==================================================
     # BOXPLOTS CATEGÓRICOS RESPECTO A PRECIO
@@ -320,106 +277,103 @@ def eda_visualizacion_suvs(df, target="Precio", current_year=2024):
     plt.tight_layout()
     plt.show()
 
+def plot_precio_segun_antiguedad_km(df, target="Precio", current_year=2025 ):
+    data = df.copy()
 
+    sns.set_theme(style="whitegrid")
+    plt.rcParams["figure.facecolor"] = "white"
+    plt.rcParams["axes.facecolor"] = "#fffafa"
+    plt.rcParams["axes.edgecolor"] = "#dddddd"
+    plt.rcParams["grid.alpha"] = 0.3
 
-    
+    # Filtro solo para visualización
+    data_plot = data[
+        (data["Año"] <= current_year) &
+        (data["Año"] >= 1980) &
+        (data[target] > 0)
+    ].copy()
 
-def plot_antiguedad_km_vs_precio(df, target="Precio"):
-    data_plot = data_plot = df[df["Antiguedad"] <= 50].copy()
     data_plot["Log_Precio"] = np.log1p(data_plot[target])
     data_plot["Log_Km"] = np.log1p(data_plot["Kilómetros"])
+    data_plot["Antiguedad"] = (current_year - data_plot["Año"]).clip(lower=0)
+    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
 
-    fig, axes = plt.subplots(1, 2, figsize=(18, 5))
-
-    # Antiguedad vs Log_Precio
-    sns.scatterplot(
-        data=data_plot,
-        x="Antiguedad",
+    # Kilómetros vs Precio
+    sns.regplot(
+        data=data_plot.dropna(subset=["Log_Km", "Log_Precio"]),
+        x="Log_Km",
         y="Log_Precio",
-        alpha=0.25,
-        s=18,
+        color=CELESTE,
+        scatter_kws={"alpha": 0.15, "s": 12},
+        line_kws={"linewidth": 2},
         ax=axes[0]
     )
-    axes[0].set_title("Antigüedad vs Precio")
-    axes[0].set_xlabel("Antigüedad (años)")
+
+    axes[0].set_title("Kilometraje vs Precio")
+    axes[0].set_xlabel("Log(Kilómetros)")
     axes[0].set_ylabel("Log(Precio)")
 
-    # Boxplot por rangos de antigüedad
+    # Antigüedad vs Precio
+    data_ant = data_plot[data_plot["Antiguedad"] <= 50].copy()
+
+
+    sns.regplot(
+        data=data_ant,
+        x="Antiguedad",
+        y="Log_Precio",
+        color=LILA,
+        scatter_kws={"alpha": 0.15, "s": 12},
+        line_kws={"linewidth": 2},
+        ax=axes[1]
+    )
+
+    axes[1].set_title("Antigüedad vs Precio")
+    axes[1].set_xlabel("Antigüedad (años)")
+    axes[1].set_ylabel("Log(Precio)")
+
+    plt.suptitle(
+        "Relación del precio con kilometraje y antigüedad",
+        fontsize=16,
+        fontweight="bold"
+    )
+
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.show()
+
+
+def plot_precio_segun_rango_ant(df, target="Precio"):
+    data_plot = df[df["Antiguedad"] <= 50].copy()
+
     data_plot["Rango antigüedad"] = pd.cut(
         data_plot["Antiguedad"],
         bins=[0, 2, 5, 10, 15, 20, 100],
         labels=["0-2", "3-5", "6-10", "11-15", "16-20", "20+"]
     )
+    
+    plt.figure(figsize=(10, 5))
     sns.boxplot(
         data=data_plot,
         x="Rango antigüedad",
-        y=target,
-        ax=axes[1]
+        y=target
     )
-    axes[1].set_title("Precio según rango de antigüedad")
-    axes[1].set_xlabel("Antigüedad (años)")
-    axes[1].set_ylabel("Precio")
-
-    plt.suptitle("Efecto de antigüedad y kilometraje sobre el precio", fontsize=16, fontweight="bold")
-    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.title("Precio según rango de antigüedad", fontsize=14, fontweight="bold")
+    plt.xlabel("Antigüedad (años)")
+    plt.ylabel("Precio")
+    plt.tight_layout()
     plt.show()
 
 
-
-
-
-
-
-
-
-
-def plot_dispersion_por_marca(df, target="Precio", top_n=15):  #SE VE MUY MAL EL GRAFICO !
-    marcas_validas = df['Marca_Modelo'].value_counts()
-    marcas_validas = marcas_validas[marcas_validas >= 35].index
-    data_filtrado = df[df['Marca_Modelo'].isin(marcas_validas)]
-
-    cv = data_filtrado.groupby('Marca_Modelo')['Precio'].agg(['std', 'mean'])
-    cv["cv"] = cv["std"] / cv["mean"]
-    cv = cv.sort_values("cv", ascending = False)
-
-    _, axes = plt.subplots(1, 2, figsize=(20, 8))
-
-    # Coeficiente de variación
-    sns.barplot(x = cv["cv"], y = cv.index, ax = axes[0])
-    axes[0].set_title("Coeficiente de variación por marca (menor = más uniforme)")
-    axes[0].set_xlabel("CV (std / mean)")
-    axes[0].set_ylabel("Marca")
-
-    # Boxplot de las marcas con menor dispersión
-    marcas_low_cv = cv.index.tolist()
-    sns.boxplot(
-        data=df[df["Marca_Modelo"].isin(marcas_low_cv)],
-        x = "Marca_Modelo",
-        y=target,
-        order = cv.index,
-        ax=axes[1]
-    )
-    axes[1].set_title("Distribución de precios (marcas con menor dispersión)")
-    axes[1].set_xlabel("Marca_Modelo")
-    axes[1].set_ylabel("Precio")
-    axes[1].tick_params(axis="x", rotation=45)
-
-    plt.suptitle("Dispersión de precios por marca", fontsize=16, fontweight="bold")
-    plt.tight_layout(rect=[0, 0, 1, 0.95])
-    plt.show()
-
-
-def plot_dispersion_por_marca_martu(df, target="Precio", min_muestras=35, top_n=15):
+def plot_dispersion_por_marca(df, target="Precio", min_muestras=35, top_n=15):
     data = df.copy()
 
-    marcas_validas = data["Marca_Modelo"].value_counts()
+    marcas_validas = data["Marca"].value_counts()
     marcas_validas = marcas_validas[marcas_validas >= min_muestras].index
 
-    data_filtrado = data[data["Marca_Modelo"].isin(marcas_validas)]
+    data_filtrado = data[data["Marca"].isin(marcas_validas)]
 
     cv = (
         data_filtrado
-        .groupby("Marca_Modelo")[target]
+        .groupby("Marca")[target]
         .agg(["count", "mean", "std"])
     )
 
@@ -427,32 +381,32 @@ def plot_dispersion_por_marca_martu(df, target="Precio", min_muestras=35, top_n=
     cv = cv.dropna()
 
     # Más dispersas y menos dispersas
-    cv_alto = cv.sort_values("cv", ascending=False).head(top_n)
-    cv_bajo = cv.sort_values("cv", ascending=True).head(top_n)
+    cv_alto = cv.sort_values("cv", ascending = False).head(top_n)
+    cv_bajo = cv.sort_values("cv", ascending = True).head(top_n).sort_values("cv", ascending = False)
 
-    fig, axes = plt.subplots(1, 2, figsize=(18, 7))
+    _, axes = plt.subplots(1, 2, figsize=(18, 7))
 
     sns.barplot(
         data=cv_alto.reset_index(),
-        x="cv",
-        y="Marca_Modelo",
+        x = "cv",
+        y = "Marca",
         ax=axes[0]
     )
     axes[0].set_title(f"Top {top_n} modelos con mayor dispersión")
     axes[0].set_xlabel("Coeficiente de variación")
-    axes[0].set_ylabel("Marca_Modelo")
+    axes[0].set_ylabel("Marca")
 
     sns.barplot(
         data=cv_bajo.reset_index(),
-        x="cv",
-        y="Marca_Modelo",
+        x = "cv",
+        y = "Marca",
         ax=axes[1]
     )
     axes[1].set_title(f"Top {top_n} modelos con menor dispersión")
     axes[1].set_xlabel("Coeficiente de variación")
     axes[1].set_ylabel("")
 
-    plt.suptitle("Dispersión relativa de precios por Marca_Modelo", fontsize=16, fontweight="bold")
+    plt.suptitle("Dispersión relativa de precios por Marca", fontsize=16, fontweight="bold")
     plt.tight_layout()
     plt.show()
 
@@ -461,16 +415,18 @@ def plot_dispersion_por_marca_martu(df, target="Precio", min_muestras=35, top_n=
 
     plt.figure(figsize=(16, 6))
     sns.boxplot(
-        data=data_filtrado[data_filtrado["Marca_Modelo"].isin(orden)],
-        x="Marca_Modelo",
-        y=target,
-        order=orden
+        data=data_filtrado[data_filtrado["Marca"].isin(orden)],
+        x = "Marca",
+        y = target,
+        order = orden
     )
+    plt.yscale('log')
     plt.title(f"Distribución de precios - {top_n} modelos más uniformes")
-    plt.xlabel("Marca_Modelo")
-    plt.ylabel("Precio")
-    plt.xticks(rotation=45, ha="right")
+    plt.xlabel("Marca")
+    plt.ylabel("log(Precio)")
+    plt.xticks(rotation = 45, ha = "right")
     plt.tight_layout()
     plt.show()
 
     return cv.sort_values("cv")
+
