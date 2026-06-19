@@ -14,7 +14,6 @@ def convertir_a_usd(dataset:pd.DataFrame, tipo_de_cambio:float):
 
         Parámetros de salida:
             dataset(pd.DataFrame): dataset con la modificación realizada
-        
     """
     dataset= dataset.copy()
     dataset['Precio'] = np.where(dataset['Moneda'] == '$', dataset['Precio'] / tipo_de_cambio, dataset['Precio'])
@@ -52,18 +51,19 @@ def corregir_marcas(dataset:pd.DataFrame) -> pd.DataFrame:
     return dataset
 
 def crear_marca_modelo(dataset: pd.DataFrame) -> pd.DataFrame:
-
-    """ concatena Columna Marca y Modelo"""
+    """ 
+    Concatena las columnas Marca y Modelo
+        
+        Parámetros de entrada:
+            dataset(pd.DataFrame): dataset sobre el que se trabaja
+    
+        Parámetros de salida:
+            dataset(pd.DataFrame): dataset con la modificación realizada
+    """
     dataset = dataset.copy()
-
-    dataset["Marca_Modelo"] = (
-        dataset["Marca"].astype(str).str.strip()
-        + "_"
-        + dataset["Modelo"].astype(str).str.strip()
-    )
+    dataset["Marca_Modelo"] = (dataset["Marca"].astype(str).str.strip() + "_" + dataset["Modelo"].astype(str).str.strip())
 
     dataset = dataset.drop(columns=["Marca", "Modelo"])
-
     return dataset
 
 def analizar_puertas(dataset:pd.DataFrame) -> pd.DataFrame:
@@ -95,7 +95,6 @@ def pasar_kilometros_numerico(dataset:pd.DataFrame) -> pd.DataFrame:
     dataset["Kilómetros"] = pd.to_numeric(dataset["Kilómetros"], errors="coerce")
     return dataset
 
-
 def crear_0km(dataset:pd.DataFrame) -> pd.DataFrame:
     """
     Crea la columna '0km' que indica si el vehículo es nuevo (1 si los kilómetros son 0, y 0 en caso contrario)
@@ -125,56 +124,33 @@ def limpiar_filas_motor(dataset:pd.DataFrame) -> pd.DataFrame:
     return dataset
 
 def tratar_motor(dataset: pd.DataFrame) -> pd.DataFrame:
-
     dataset = dataset.copy()
-
     motor_texto = dataset["Motor"].astype(str).str.lower()
 
-    extraido = (
-        motor_texto
-        .str.extract(r"(\d+[.,]\d+)")[0]
-        .str.replace(",", ".", regex=False)
-    )
-
+    extraido = (motor_texto.str.extract(r"(\d+[.,]\d+)")[0].str.replace(",", ".", regex=False))
     dataset["Motor_Litros"] = pd.to_numeric(extraido, errors="coerce")
 
-    dataset["Motor_Turbo"] = (
-        motor_texto.str.contains(
-            "turbo|tsi|tfsi|tdi|thp|biturbo|t270|t200",
-            na=False
-        )
-    ).astype(int)
+    dataset["Motor_Turbo"] = (motor_texto.str.contains(
+        "turbo|tsi|tfsi|tdi|thp|biturbo|t270|t200",na=False)).astype(int)
 
     dataset["Motor_Multipunto"] = (
         motor_texto.str.contains(
-            "inyeccion multi punto|inyección multi punto|multipunto",
-            na=False
-        )
-    ).astype(int)
+            "inyeccion multi punto|inyección multi punto|multipunto", na = False)).astype(int)
 
     dataset["Motor_Diesel"] = (
         motor_texto.str.contains(
-            "diesel|diésel|tdi|td|hdi",
-            na=False
-        )
-    ).astype(int)
+            "diesel|diésel|tdi|td|hdi", na = False)).astype(int)
 
     dataset["Motor_Hibrido"] = (
         motor_texto.str.contains(
-            "hibrid|hybrid|híbrido|electrico|eléctrico|plug in",
-            na=False
-        )
-    ).astype(int)
+            "hibrid|hybrid|híbrido|electrico|eléctrico|plug in", na = False)).astype(int)
 
-    dataset["Motor_Litros_Faltante"] =  dataset["Motor_Litros"].isna().astype(int)
+    dataset["Motor_Litros_Faltante"] = dataset["Motor_Litros"].isna().astype(int)
 
     dataset = dataset.drop(columns=["Motor"])
-
     return dataset
 
-
 def clasificar_version(dataset: pd.DataFrame) -> pd.DataFrame:
-
     dataset = dataset.copy()
 
     version = dataset["Versión"].astype(str).str.lower()
@@ -195,22 +171,16 @@ def clasificar_version(dataset: pd.DataFrame) -> pd.DataFrame:
     ]
 
     dataset["Version_Premium"] = (
-        version.str.contains("|".join(premium), na=False)
-    ).astype(int)
+        version.str.contains("|".join(premium), na=False)).astype(int)
 
     dataset["Version_Intermedia"] = (
-        version.str.contains("|".join(intermedia), na=False)
-    ).astype(int)
+        version.str.contains("|".join(intermedia), na=False)).astype(int)
 
     dataset["Version_Base"] = np.where(
         (dataset["Version_Premium"] == 0)
-        & (dataset["Version_Intermedia"] == 0),
-        1,
-        0
-    )
+        & (dataset["Version_Intermedia"] == 0), 1, 0)
 
     dataset = dataset.drop(columns=["Versión"])
-
     return dataset
 
 def unir_colores(dataset):
@@ -248,10 +218,8 @@ def unir_colores(dataset):
     })
     return dataset
 
-
 def completar_color_descripcion(dataset: pd.DataFrame) -> pd.DataFrame:
     dataset = dataset.copy()
-
     colores = [
         "blanco", "negro", "gris", "plateado", "rojo", "azul",
         "marrón", "beige", "dorado", "verde",
@@ -261,12 +229,11 @@ def completar_color_descripcion(dataset: pd.DataFrame) -> pd.DataFrame:
     descripcion = dataset["Descripción"].astype(str).str.lower()
 
     for color in colores:
-        mask = (
+        faltantes_menciona_color = (
             dataset["Color"].isna()
-            & descripcion.str.contains(rf"\b{color}\b", na=False)
-        )
+            & descripcion.str.contains(rf"\b{color}\b", na = False))
 
-        dataset.loc[mask, "Color"] = color.replace("marron", "marrón")
+        dataset.loc[faltantes_menciona_color, "Color"] = color.replace("marron", "marrón")
 
     return dataset
 
@@ -290,22 +257,11 @@ def tratar_camara_retroceso(dataset: pd.DataFrame) -> pd.DataFrame:
     ]
 
     menciona_camara = descripcion.str.contains(
-        "|".join(patrones_camara),
-        regex=True,
-        na=False
-    )
+        "|".join(patrones_camara), regex = True, na = False)
+    mascara_nan = dataset["Con cámara de retroceso"].isna()
+    dataset.loc[mascara_nan & menciona_camara, "Con cámara de retroceso"] = "Sí"
 
-    mask_nan = dataset["Con cámara de retroceso"].isna()
-
-    dataset.loc[
-        mask_nan & menciona_camara,
-        "Con cámara de retroceso"
-    ] = "Sí"
-
-    dataset["Con cámara de retroceso"] = (
-        dataset["Con cámara de retroceso"]
-        .fillna("Desconocido")
-    )
+    dataset["Con cámara de retroceso"] = (dataset["Con cámara de retroceso"].fillna("Desconocido"))
 
     return dataset
 
@@ -334,9 +290,9 @@ def descripcion_scoring(dataset:pd.DataFrame) -> pd.DataFrame:
         'papeles al día', 'documentación al día', 'vtv al día', 'vtv vigente', 'vtv apto',
         'km reales', 'guardado en cochera', 'nunca un golpe', 'sin detalles',
         'distribución recién', 'cadena nueva', 'batería nueva',
-        # Forma femenina de dueño único (ej: "Unica dueña")
+        # Forma femenina de dueño único
         'única dueña', 'unica dueña',
-        # Sin tildes (vendedores suelen omitirlas)
+        # Sin tildes 
         'garantia', 'papeles al dia', 'documentacion al dia', 'vtv al dia', 'bateria nueva',
         # Femenino / variantes de "listo para transferir"
         'lista para transferir', 'lista para la transferencia', 'listo para la transferencia',
@@ -382,8 +338,8 @@ def descripcion_scoring(dataset:pd.DataFrame) -> pd.DataFrame:
         'cuotas',
         'muy bueno', 'nada para hacerle'
     ]
+
     palabras_negativas = [
-        # Originales
         'no incluyó una descripción', 'chocado', 'reparado', 'motor no funciona',
         'detalle de chapa', 'detalle a la vista',
         # Plural de "detalle a la vista" (ej: "detalles a la vista casoletas...")
@@ -420,7 +376,6 @@ def descripcion_scoring(dataset:pd.DataFrame) -> pd.DataFrame:
 
     return dataset 
 
-
 def preprocesamiento_pre_split(dataset:pd.DataFrame) -> pd.DataFrame:
     """
     Aplica el preprocesamiento inicial al dataset completo, antes de realizar el split en entrenamiento y validación
@@ -448,70 +403,53 @@ def preprocesamiento_pre_split(dataset:pd.DataFrame) -> pd.DataFrame:
     dataset = limpiar_filas_motor(dataset)
     dataset = tratar_motor(dataset)
     
-    dataset= completar_color_descripcion(dataset)
+    dataset = completar_color_descripcion(dataset)
     dataset = unir_colores(dataset)
     
     #Definimos el tipo de cambio promedio de mayo 2024 (fecha del dataset)
     dataset = convertir_a_usd(dataset, tipo_de_cambio = 884.60)
     
-    dataset =clasificar_version(dataset)
+    dataset = clasificar_version(dataset)
     dataset = tratar_camara_retroceso(dataset)
     dataset = descripcion_scoring(dataset)
 
     return dataset
 
-
-
-
-
-
-
-################################################################
-#POST SPLIT 
-
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#PREPROCESAMIENTO POST SPLIT 
 def moda_color(X_train: pd.DataFrame) -> pd.DataFrame:
-    apariciones_color = (
-        X_train
-        .groupby("Marca_Modelo")["Color"]
-        .value_counts()
-        .reset_index()
-    )
+    """
+    Calcula el color más frecuente por combinación de 'Marca' y 'Modelo' (sobre el set de entrenamiento) para imputar valores nulos de la columna 'Color'
 
+        Parámetros de entrada:
+            X_train(pd.DataFrame): matriz de features de entrenamiento
+
+        Parámetros de salida:
+            (pd.DataFrame): DataFrame con las columnas 'Marca', 'Modelo', 'Color moda' 
+    """
+    #Agrupa por marca y modelo y cuenta la cantidad de cada color y ordena de mayor a menor por grupo
+    apariciones_color = (X_train.groupby("Marca_Modelo")["Color"].value_counts().reset_index())
+    #Conserva solo la primer fila de cada color
     mas_frecuente = apariciones_color.drop_duplicates("Marca_Modelo")
 
-    return mas_frecuente[["Marca_Modelo", "Color"]].rename(
-        columns={"Color": "Color moda"}
-    )
+    return mas_frecuente[["Marca_Modelo", "Color"]].rename(columns = {"Color": "Color moda"})
 
-def completar_color_sets(
-    X_train: pd.DataFrame,
-    X_val: pd.DataFrame
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-
+def completar_color_sets(X_train: pd.DataFrame, X_val: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     X_train = X_train.copy()
     X_val = X_val.copy()
 
     color_moda = moda_color(X_train)
     color_global = X_train["Color"].mode()[0]
 
-    X_train = X_train.merge(color_moda, on="Marca_Modelo", how="left")
-    X_train["Color"] = (
-        X_train["Color"]
-        .fillna(X_train["Color moda"])
-        .fillna(color_global)
-    )
+    X_train = X_train.merge(color_moda, on = "Marca_Modelo", how = "left")
+    X_train["Color"] = (X_train["Color"].fillna(X_train["Color moda"]).fillna(color_global))
     X_train = X_train.drop(columns=["Color moda"])
 
     X_val = X_val.merge(color_moda, on="Marca_Modelo", how="left")
-    X_val["Color"] = (
-        X_val["Color"]
-        .fillna(X_val["Color moda"])
-        .fillna(color_global)
-    )
+    X_val["Color"] = (X_val["Color"].fillna(X_val["Color moda"]).fillna(color_global))
     X_val = X_val.drop(columns=["Color moda"])
 
     return X_train, X_val
-
 
 def knn_transmision(set:pd.DataFrame, dummy_cols:list = None) -> tuple[pd.DataFrame, pd.Series, list[str]]:
     """
@@ -580,10 +518,20 @@ def transmision_sets(X_train:pd.DataFrame, X_val:pd.DataFrame) -> tuple[pd.DataF
 
     return X_train, X_val
 
-
-
 def completar_kilometros(X_train:pd.DataFrame, X_val:pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Imputa los valores nulos de 'Kilómetros' usando la mediana agrupada por 'Año'
+    Aprende las medianas sobre train y las aplica a ambos sets.
+    Si un año de validación no existe en train, se usa la mediana global de train
+        
+        Parámetros de entrada:
+            X_train(pd.DataFrame): matriz de features para entrenamiento
+            X_val(pd.DataFrame): matriz de features para validación
 
+        Parámetros de salida:
+            X_train(pd.DataFrame): matriz de entrenamiento con 'Kilómetros' sin nulos
+            X_val(pd.DataFrame): matriz de validación con 'Kilómetros' sin nulos
+    """
     X_train = X_train.copy()
     X_val = X_val.copy()
 
@@ -591,18 +539,26 @@ def completar_kilometros(X_train:pd.DataFrame, X_val:pd.DataFrame) -> tuple[pd.D
     mediana_global = X_train['Kilómetros'].median()
 
     X_train['Kilómetros'] = X_train['Kilómetros'].fillna(X_train['Año'].map(mediana_por_año)).fillna(mediana_global)
-
+    
     medianas_val = X_val['Año'].map(mediana_por_año).fillna(mediana_global)
-
     X_val['Kilómetros'] = X_val['Kilómetros'].fillna(medianas_val).fillna(mediana_global)
 
     return X_train, X_val
 
-def completar_motor_litros(
-    X_train: pd.DataFrame,
-    X_val: pd.DataFrame
-) -> tuple[pd.DataFrame, pd.DataFrame]:
+def completar_motor_litros(X_train: pd.DataFrame, X_val: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Imputa los valores nulos de 'Motor_Litros' usando la mediana agrupada por 'Año'
+    Aprende las medianas sobre train y las aplica a ambos sets.
+    Si un año de validación no existe en train, se usa la mediana global de train
+        
+        Parámetros de entrada:
+            X_train(pd.DataFrame): matriz de features para entrenamiento
+            X_val(pd.DataFrame): matriz de features para validación
 
+        Parámetros de salida:
+            X_train(pd.DataFrame): matriz de entrenamiento con 'Kilómetros' sin nulos
+            X_val(pd.DataFrame): matriz de validación con 'Kilómetros' sin nulos
+    """
     X_train = X_train.copy()
     X_val = X_val.copy()
 
@@ -613,11 +569,7 @@ def completar_motor_litros(
 
     return X_train, X_val
 
-
-
-
-
-############################################################################################
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #FEATURE ENGINEERING
 def crear_features_autos(set:pd.DataFrame, año_actual:int = 2024) -> pd.DataFrame:
     """
@@ -638,31 +590,39 @@ def crear_features_autos(set:pd.DataFrame, año_actual:int = 2024) -> pd.DataFra
     set["Km_por_año"] = (set["Kilómetros"] / (set["Antiguedad"] + 1))
     set["Log_Kilómetros"] = np.log1p(set["Kilómetros"])
 
-
     return set
 
-def preprocesamiento_post_split(
-    X_train: pd.DataFrame,
-    X_val: pd.DataFrame
-) -> tuple[pd.DataFrame, pd.DataFrame]:
+def preprocesamiento_post_split(X_train: pd.DataFrame, X_val: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Aplica el preprocesamiento de los datos post split en entrenamiento y validación para la utilización de los parámetros del primero sobre ambos sets.
+    Se completan los valores faltantes para el color, cámara de retroceso, transmisión y kilómetros. Se aplica Feature Engineering para futuros usos.
 
+        Parámetros de entrada:
+            X_train(pd.DataFrame): matriz de features para entrenamiento
+            X_val(pd.DataFrame): matriz de features para validación
+       
+        Parámetros de salida:
+            X_train(pd.DataFrame): matriz de features para entrenamiento luego del preprocesamiento
+            X_val(pd.DataFrame): matriz de features para validación luego del preprocesamiento
+    """
     X_train = X_train.copy()
     X_val = X_val.copy()
 
     X_train, X_val = completar_color_sets(X_train, X_val)
+    #TRANSMISION -> One-Hot Encoding -> KNN imputer -> decode back
     X_train, X_val = transmision_sets(X_train, X_val)
+    #KILOMETROS -> mediana agrupada por año 
     X_train, X_val = completar_kilometros(X_train, X_val)
     X_train, X_val = completar_motor_litros(X_train, X_val)
 
+    #FEATURE ENGINEERING
     X_train = crear_features_autos(X_train)
     X_val = crear_features_autos(X_val)
 
     return X_train, X_val
 
 
-
-##################################################################################
-
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #ONE-HOT LUEGO DE TODO EL PREPROCESSING 
 def onehot_encoding(X_train, X_val, categoricas) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
