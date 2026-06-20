@@ -31,7 +31,7 @@ def rmse(y_true:np.array,y_pred:np.array) -> float:
 #Error absoluto medio
 def mae(y_true:np.array,y_pred:np.array) -> float:
     """
-    Computa el Error Medio Cuadrático entre el valor real y el predicho de cada muestra
+    Computa el Error Medio Absoluto entre el valor real y el predicho de cada muestra
 
         Parámetros de entrada:
             y_true(np.array): valores reales del target
