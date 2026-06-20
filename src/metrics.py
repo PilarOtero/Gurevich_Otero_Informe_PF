@@ -28,6 +28,21 @@ def rmse(y_true:np.array,y_pred:np.array) -> float:
     """
     return np.sqrt(mse(y_true,y_pred))
 
+#Error absoluto medio
+def mae(y_true:np.array,y_pred:np.array) -> float:
+    """
+    Computa el Error Medio Cuadrático entre el valor real y el predicho de cada muestra
+
+        Parámetros de entrada:
+            y_true(np.array): valores reales del target
+            y_pred(np.array): valores estimados del target
+        
+        Parámetros de salida:
+            (float): la raíz del MSE, siempre positiva
+    """
+    return np.mean(np.abs(y_true - y_pred))
+
+
 #Coeficiente de determinacion R cuadrado
 def r2(y_true, y_pred):
     """
