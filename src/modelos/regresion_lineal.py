@@ -3,7 +3,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import Ridge, Lasso
 from src.metrics import r2, rmse, mae
 
-def entrenar_regresion_lineal(X_train:pd.DataFrame, y_train:pd.Series, X_val:pd.DataFrame, y_val:pd.Series, modelo = None) -> tuple:
+def entrenar_regresion_lineal(X_train:pd.DataFrame, y_train:pd.Series, X_val:pd.DataFrame, y_val:pd.Series, modelo = None, print_ = False) -> tuple:
     """
     Entrena un modelo de regresión lineal (o una variante regularizada como Ridge/Lasso si se pasa por parámetro) y evalúa su desempeño sobre el set de validación.
 
@@ -26,14 +26,15 @@ def entrenar_regresion_lineal(X_train:pd.DataFrame, y_train:pd.Series, X_val:pd.
     modelo.fit(X_train, y_train)
     y_pred = modelo.predict(X_val)
 
+    #Métricas
     rmse_score = rmse(y_val, y_pred)
     r2_score = r2(y_val, y_pred)
     mae_score = mae(y_val, y_pred)
 
-    #Métricas
-    print(f'RMSE = {rmse_score:.2f}')
-    print(f'MAE = {mae_score:.2f}')
-    print(f'R² = {r2_score:.2f}')
+    if print_:
+        print(f'RMSE = {rmse_score:.2f}')
+        print(f'MAE = {mae_score:.2f}')
+        print(f'R² = {r2_score:.2f}')
 
     return modelo, y_pred, rmse_score, r2_score, mae_score
 
@@ -54,8 +55,8 @@ def definir_regularizacion(X_train:pd.DataFrame, y_train:pd.Series, X_val:pd.Dat
     resultados = []
 
     for alpha in alphas:
-        for nombre, modelo in [('Ridge', Ridge(alpha = alpha, solver = 'lsqr')), ('Lasso', Lasso(alpha = alpha, max_iter = 10000))]:
-            modelo_entrenado, predicciones, rmse_score, r2_score, mae_score = entrenar_regresion_lineal(X_train, y_train, X_val, y_val, modelo = modelo)
+        for nombre, modelo in [('Ridge', Ridge(alpha = alpha, solver = 'lsqr')), ('Lasso', Lasso(alpha = alpha, max_iter = 50000))]:
+            _, _, rmse_score, r2_score, mae_score = entrenar_regresion_lineal(X_train, y_train, X_val, y_val, modelo = modelo)
             resultados.append({'Modelo': nombre, 'Alpha': alpha, 'RMSE': rmse_score, 'MAE': mae_score, 'R2': r2_score})
     
     return pd.DataFrame(resultados).sort_values('R2', ascending = False)

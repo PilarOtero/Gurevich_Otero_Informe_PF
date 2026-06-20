@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 from sklearn.impute import KNNImputer
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.decomposition import TruncatedSVD
 
 #FUNCIONES DE PREPROCESSING PRE SPLIT
 def convertir_a_usd(dataset:pd.DataFrame, tipo_de_cambio:float):
@@ -344,8 +346,9 @@ def tratar_camara_retroceso(dataset: pd.DataFrame) -> pd.DataFrame:
 
     return dataset
 
+"""
 def descripcion_scoring(dataset:pd.DataFrame) -> pd.DataFrame:
-    """
+    
     Genera un score numerico del 1 al 10 para cada muestra en base a su descripcion.
     Asigna +1 por cada palabra positiva hallada y -1 por cada palabra negativa.
     Se normaliza el score al rango [1,10] y se clippea en esos valores maximos.
@@ -356,7 +359,7 @@ def descripcion_scoring(dataset:pd.DataFrame) -> pd.DataFrame:
     
         Parámetros de salida:
             dataset(pd.DataFrame): dataset con la modificación realizada
-    """
+    
     dataset = dataset.copy()
     descripcion = dataset['Descripción'].str.lower()
 
@@ -471,6 +474,7 @@ def descripcion_scoring(dataset:pd.DataFrame) -> pd.DataFrame:
     dataset = dataset.drop(columns = ['Descripción'])
 
     return dataset 
+"""
 
 def preprocesamiento_pre_split(dataset:pd.DataFrame) -> pd.DataFrame:
     """
@@ -507,7 +511,7 @@ def preprocesamiento_pre_split(dataset:pd.DataFrame) -> pd.DataFrame:
     
     dataset = clasificar_version(dataset)
     dataset = tratar_camara_retroceso(dataset)
-    dataset = descripcion_scoring(dataset)
+    #dataset = descripcion_scoring(dataset)
 
     return dataset
 
@@ -678,6 +682,25 @@ def completar_motor_litros(X_train: pd.DataFrame, X_val: pd.DataFrame) -> tuple[
 
     return X_train, X_val
 
+def agregar_tf_idf(descripcion_train, descripcion_val, X_train, X_val, n_componentes = 20, max_palabras_vocab = 300):
+    tfidf = TfidfVectorizer(max_features = max_palabras_vocab)
+    X_descripcion_train = tfidf.fit_transform(descripcion_train.fillna(""))
+    X_descripcion_val = tfidf.transform(descripcion_val.fillna(""))
+
+    svd = TruncatedSVD(n_components = n_componentes, random_state = 42)
+    X_descripcion_train_ = svd.fit_transform(X_descripcion_train)
+    X_descripcion_val_ = svd.transform(X_descripcion_val)
+
+    descripcion_cols = [f'Descripcion_{i}' for i in range(n_componentes)]
+
+    X_train_final = pd.concat([X_train.reset_index(drop = True), pd.DataFrame(X_descripcion_train_, columns = descripcion_cols)], axis = 1)
+    X_val_final = pd.concat([X_val.reset_index(drop = True), pd.DataFrame(X_descripcion_val_, columns = descripcion_cols)], axis = 1)
+
+    X_train_final = X_train_final.drop(columns = ['Descripción'])
+    X_val_final = X_val_final.drop(columns = ['Descripción'])
+
+    return X_train_final, X_val_final
+
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #FEATURE ENGINEERING
 def crear_features_autos(set:pd.DataFrame, año_actual:int = 2025) -> pd.DataFrame:
@@ -728,6 +751,9 @@ def preprocesamiento_post_split(X_train: pd.DataFrame, X_val: pd.DataFrame) -> t
     #FEATURE ENGINEERING
     X_train = crear_features_autos(X_train)
     X_val = crear_features_autos(X_val)
+
+    #Descripcion
+    X_train, X_val = agregar_tf_idf(X_train['Descripción'], X_val['Descripción'], X_train, X_val)
 
     return X_train, X_val
 

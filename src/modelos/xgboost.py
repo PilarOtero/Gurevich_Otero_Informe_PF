@@ -18,9 +18,9 @@ def entrenar_xgboost(X_train, y_train, X_val, y_val):
     mae_score = mae(y_val, y_pred)
 
     #Métricas
-    print(f'RMSE = {rmse_score:.2f}')
-    print(f'MAE = {mae_score:.2f}')
-    print(f'R² = {r2_score:.2f}')
+    print(f'RMSE = {rmse_score:.4f}')
+    print(f'MAE = {mae_score:.4f}')
+    print(f'R² = {r2_score:.4f}')
 
     return modelo, y_pred
 
@@ -36,8 +36,8 @@ def entrenar_xgboost_ohe(X_train, y_train, X_val, y_val):
     r2_val = r2(y_val, y_pred)
     mae_score = mae(y_val, y_pred)
 
-    print(f"RMSE: {rmse_score:.2f}")
-    print(f'MAE = {mae_score:.2f}')
+    print(f"RMSE: {rmse_score:.4f}")
+    print(f'MAE = {mae_score:.4f}')
     print(f"R²:   {r2_val:.4f}")
 
     return modelo, y_pred
