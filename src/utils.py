@@ -1,16 +1,16 @@
 import numpy as np
 
-def estandarizar(X_train:np.ndarray, X_eval:np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def estandarizar(X_train:np.ndarray, X_val:np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Standarization of the data using the mean and standard deviation computed from the training set - > X_norm = (X - μ) / σ
 
         Entry parameters:
             X_train(np.ndarray): training feature matrix of shape (n_samples, n_samples)
-            X_eval(np.ndarray): evaluation feature matrix of shape (n_samples, n_samples)
+            X_val(np.ndarray): evaluation feature matrix of shape (n_samples, n_samples)
 
         Output parameters:
             X_train(np.ndarray): standarized training feature matrix of shape
-            X_eval(np.ndarray): standarized test feature matrix of shape
+            X_val(np.ndarray): standarized test feature matrix of shape
             mean(np.ndarray): mean per feature computed from the training set
             std(np.ndarray): standard deviation per feature computed from the training set
     """
@@ -21,6 +21,6 @@ def estandarizar(X_train:np.ndarray, X_eval:np.ndarray) -> tuple[np.ndarray, np.
     std = np.where(std == 0, 1, std)
 
     X_train = (X_train - mean) / std
-    X_eval = (X_eval - mean) / std
+    X_val = (X_val - mean) / std
 
-    return X_train, X_eval, mean, std
+    return X_train, X_val, mean, std

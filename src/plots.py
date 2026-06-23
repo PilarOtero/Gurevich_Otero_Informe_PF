@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from IPython.display import display
 
 sns.set_theme(style="whitegrid")
 PALETA = sns.color_palette("pastel")
@@ -393,3 +394,108 @@ def plot_dispersion_por_marca(df, target="Precio", min_muestras=35, top_n=15):
     plt.show()
 
     return cv.sort_values("cv")
+
+
+#PARA OUTLIERS
+def plot_boxplots_por_grupo(
+    dataset: pd.DataFrame,
+    grupo_col: str = "Marca_Modelo",
+    col: str = "Precio",
+    top_n: int = 12
+) -> None:
+
+    top_grupos = dataset[grupo_col].value_counts().head(top_n).index
+    df_top = dataset[dataset[grupo_col].isin(top_grupos)].copy()
+
+    orden = (
+        df_top.groupby(grupo_col)[col]
+        .median()
+        .sort_values(ascending=False)
+        .index
+    )
+
+    plt.figure(figsize=(14, 6))
+
+    sns.boxplot(
+        data=df_top,
+        x=grupo_col,
+        y=col,
+        order=orden,
+        color="lightsteelblue"
+    )
+
+    plt.xticks(rotation=40, ha="right")
+    plt.title(f"Distribución de {col} por {grupo_col}")
+    plt.xlabel(grupo_col)
+    plt.ylabel(col)
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_grupo_especifico(
+    dataset: pd.DataFrame,
+    grupo: str,
+    grupo_col: str = "Marca_Modelo",
+    col: str = "Precio",
+    k: float = 1.5
+) -> pd.DataFrame:
+
+    data_grupo = dataset[dataset[grupo_col] == grupo].copy()
+    valores = data_grupo[col].dropna()
+
+    if len(valores) == 0:
+        print(f"No hay registros para {grupo}.")
+        return pd.DataFrame()
+
+    q1 = valores.quantile(0.25)
+    q3 = valores.quantile(0.75)
+    iqr = q3 - q1
+
+    limite_inf = q1 - k * iqr
+    limite_sup = q3 + k * iqr
+
+    outliers = data_grupo[
+        (data_grupo[col] < limite_inf) |
+        (data_grupo[col] > limite_sup)
+    ]
+
+    print(f"{grupo} — {len(data_grupo)} registros")
+    print(f"Q1={q1:,.2f}")
+    print(f"Q3={q3:,.2f}")
+    print(f"IQR={iqr:,.2f}")
+    print(f"Rango válido: [{limite_inf:,.2f}, {limite_sup:,.2f}]")
+    print(f"Outliers detectados: {len(outliers)}")
+
+    columnas = [
+        c for c in [
+            "Marca_Modelo",
+            "Precio",
+            "Año",
+            "Kilómetros",
+            "Motor_Litros",
+            "0km"
+        ]
+        if c in data_grupo.columns
+    ]
+
+    #display(outliers[columnas].sort_values(col, ascending=False))
+
+    plt.figure(figsize=(9, 4))
+
+    sns.histplot(
+        valores,
+        bins=30,
+        kde=True,
+        color="lightsteelblue"
+    )
+
+    plt.axvline(limite_inf, color="crimson", linestyle="--", label="Límite inferior")
+    plt.axvline(limite_sup, color="crimson", linestyle="--", label="Límite superior")
+
+    plt.title(f"Distribución de {col} para {grupo}")
+    plt.xlabel(col)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+    return outliers
