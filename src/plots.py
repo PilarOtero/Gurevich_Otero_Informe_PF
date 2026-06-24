@@ -432,14 +432,7 @@ def plot_boxplots_por_grupo(
     plt.show()
 
 
-def plot_grupo_especifico(
-    dataset: pd.DataFrame,
-    grupo: str,
-    grupo_col: str = "Marca_Modelo",
-    col: str = "Precio",
-    k: float = 1.5
-) -> pd.DataFrame:
-
+def plot_grupo_especifico(dataset: pd.DataFrame, grupo: str, grupo_col: str = "Marca_Modelo", col: str = "Precio", k: float = 1.5) -> pd.DataFrame:
     data_grupo = dataset[dataset[grupo_col] == grupo].copy()
     valores = data_grupo[col].dropna()
 
@@ -466,35 +459,33 @@ def plot_grupo_especifico(
     print(f"Rango válido: [{limite_inf:,.2f}, {limite_sup:,.2f}]")
     print(f"Outliers detectados: {len(outliers)}")
 
-    columnas = [
-        c for c in [
-            "Marca_Modelo",
-            "Precio",
-            "Año",
-            "Kilómetros",
-            "Motor_Litros",
-            "0km"
-        ]
-        if c in data_grupo.columns
-    ]
+    #columnas = [
+    #    c for c in [
+    #        "Marca_Modelo",
+    #        "Precio",
+    #        "Año",
+    #        "Kilómetros",
+    #        "Motor_Litros",
+    #        "0km"
+    #    ]
+    #    if c in data_grupo.columns]
 
-    #display(outliers[columnas].sort_values(col, ascending=False))
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4))
 
-    plt.figure(figsize=(9, 4))
+    sns.histplot(valores, bins=30, kde=True, color="lightsteelblue", ax=axes[0])
+    axes[0].axvline(limite_inf, color="crimson", linestyle="--", label="Límite inferior")
+    axes[0].axvline(limite_sup, color="crimson", linestyle="--", label="Límite superior")
+    axes[0].set_title(f"Distribución de {col} para {grupo}")
+    axes[0].set_xlabel(col)
+    axes[0].legend()
 
-    sns.histplot(
-        valores,
-        bins=30,
-        kde=True,
-        color="lightsteelblue"
-    )
+    sns.boxplot(x=valores, color="lightsteelblue", ax=axes[1])
+    axes[1].axvline(limite_inf, color="crimson", linestyle="--", label="Límite inferior")
+    axes[1].axvline(limite_sup, color="crimson", linestyle="--", label="Límite superior")
+    axes[1].set_title(f"Boxplot de {col} para {grupo}")
+    axes[1].set_xlabel(col)
+    axes[1].legend()
 
-    plt.axvline(limite_inf, color="crimson", linestyle="--", label="Límite inferior")
-    plt.axvline(limite_sup, color="crimson", linestyle="--", label="Límite superior")
-
-    plt.title(f"Distribución de {col} para {grupo}")
-    plt.xlabel(col)
-    plt.legend()
     plt.tight_layout()
     plt.show()
 

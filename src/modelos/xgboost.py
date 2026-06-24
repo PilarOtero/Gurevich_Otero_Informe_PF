@@ -54,7 +54,7 @@ def grid_search(X_train, y_train, n_estimators_list, max_depth_list, learning_ra
     kf = KFold(n_splits = folds, shuffle = True, random_state = 42)
     resultados = []
 
-    for n_estimator in n_estimators_list:
+    for n_estimators in n_estimators_list:
         for max_depth in max_depth_list:
             for learning_rate in learning_rate_list:
                 r2_scores, rmse_scores, mae_scores = [], [], []
