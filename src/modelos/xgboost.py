@@ -69,9 +69,9 @@ def grid_search(X_train, y_train, n_estimators_list, max_depth_list, learning_ra
                         for col in X_train_fold.select_dtypes(include = ['object', 'category']).columns:
                             X_train_fold[col] = X_train_fold[col].astype('category')
                             X_val_fold[col] = pd.Categorical(X_val_fold[col], categories = X_train_fold[col].cat.categories)
-                        modelo = XGBRegressor(enable_categorical = True, n_estimators = n_estimator, max_depth = max_depth, learning_rate = learning_rate, random_state = 42)
+                        modelo = XGBRegressor(enable_categorical = True, n_estimators = n_estimators, max_depth = max_depth, learning_rate = learning_rate, random_state = 42)
                     else:
-                        modelo = XGBRegressor(n_estimators = n_estimator, max_depth = max_depth, learning_rate = learning_rate, random_state = 42)
+                        modelo = XGBRegressor(n_estimators = n_estimators, max_depth = max_depth, learning_rate = learning_rate, random_state = 42)
 
                     modelo.fit(X_train_fold, y_train_fold)
                     y_pred = modelo.predict(X_val_fold)
@@ -81,7 +81,7 @@ def grid_search(X_train, y_train, n_estimators_list, max_depth_list, learning_ra
                     mae_scores.append(mae(y_val_fold, y_pred))
 
                 resultados.append({
-                    'n_estimators': n_estimator,
+                    'n_estimators': n_estimators,
                     'max_depth': max_depth,
                     'learning_rate': learning_rate,
                     'R2_mean': round(np.mean(r2_scores), 4),
@@ -89,4 +89,4 @@ def grid_search(X_train, y_train, n_estimators_list, max_depth_list, learning_ra
                     'MAE_mean': round(np.mean(mae_scores), 2)
                 })
 
-    return resultados
+    return pd.DataFrame(resultados).sort_values('RMSE_mean', ascending = True).reset_index(drop = True)

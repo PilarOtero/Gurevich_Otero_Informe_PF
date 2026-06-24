@@ -38,7 +38,7 @@ def entrenar_regresion_lineal(X_train:pd.DataFrame, y_train:pd.Series, X_val:pd.
 
     return modelo, y_pred, rmse_score, r2_score, mae_score
 
-def definir_regularizacion(X_train:pd.DataFrame, y_train:pd.Series, X_val:pd.DataFrame, y_val:pd.Series, alphas:list[float]) -> pd.DataFrame:
+def definir_regularizacion(X_train:pd.DataFrame, y_train:pd.Series, X_val:pd.DataFrame, y_val:pd.Series, lambdas:list[float]) -> pd.DataFrame:
     """
     Compara distintos modelos de regresión regularizada (Ridge y Lasso) entrenando uno por cada valor de alpha provisto, para encontrar la combinación con mejor desempeño.
 
@@ -54,9 +54,9 @@ def definir_regularizacion(X_train:pd.DataFrame, y_train:pd.Series, X_val:pd.Dat
     """
     resultados = []
 
-    for alpha in alphas:
-        for nombre, modelo in [('Ridge', Ridge(alpha = alpha, solver = 'svd')), ('Lasso', Lasso(alpha = alpha, max_iter = 50000))]:
+    for lambda_ in lambdas:
+        for nombre, modelo in [('Ridge', Ridge(alpha = lambda_, solver = 'svd')), ('Lasso', Lasso(alpha = lambda_, max_iter = 50000))]:
             modelo_entranado, predicciones, rmse_score, r2_score, mae_score = entrenar_regresion_lineal(X_train, y_train, X_val, y_val, modelo = modelo)
-            resultados.append({'Modelo': nombre, 'Alpha': alpha, 'RMSE': rmse_score, 'MAE': mae_score, 'R2': r2_score})
+            resultados.append({'Modelo': nombre, 'Alpha': lambda_, 'RMSE': rmse_score, 'MAE': mae_score, 'R2': r2_score})
     
     return pd.DataFrame(resultados).sort_values('R2', ascending = False)
