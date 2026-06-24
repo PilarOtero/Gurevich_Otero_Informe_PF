@@ -89,4 +89,4 @@ def grid_search(X_train, y_train, n_estimators_list, max_depth_list, learning_ra
                     'MAE_mean': round(np.mean(mae_scores), 2)
                 })
 
-    return pd.DataFrame(resultados).sort_values('R2_mean', ascending = False)
+    return resultados
