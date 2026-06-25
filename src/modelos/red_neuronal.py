@@ -121,7 +121,7 @@ def entrenar_red_neuronal(
     min_delta=1e-4,
     gradient_clip=1.0,
     random_state=42,
-    mostrar=False
+    mostrar=True
 ):
     torch.manual_seed(random_state)
     np.random.seed(random_state)
@@ -290,7 +290,7 @@ def buscar_mejor_red_neuronal(
         nombre = config.get("nombre", f"NN_{i + 1}")
 
         print(f"\nEntrenando {nombre}")
-        print(config)
+        #print(config)
 
         modelo, y_pred, historial, metricas = entrenar_red_neuronal(
             X_train=X_train,
