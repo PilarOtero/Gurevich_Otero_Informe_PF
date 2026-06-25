@@ -324,9 +324,9 @@ def buscar_mejor_red_neuronal(
             "alpha": config.get("alpha", 1e-3),
             "scheduler": config.get("scheduler", "expo"),
             "weight_decay": config.get("weight_decay", 1e-4),
-            "RMSE": round(metricas["RMSE"], 2),
-            "MAE": round(metricas["MAE"], 2),
-            "R2": round(metricas["R2"], 4),
+            "RMSE (USD)": round(metricas["RMSE"], 2),
+            "MAE (USD)": round(metricas["MAE"], 2),
+            "R²": round(metricas["R2"], 4),
             "tiempo": round(metricas["tiempo"], 2)
         })
 
