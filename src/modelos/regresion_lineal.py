@@ -36,7 +36,7 @@ def entrenar_regresion_lineal(X_train:pd.DataFrame, y_train:pd.Series, X_val:pd.
         print(f'MAE = {mae_score:.2f}')
         print(f'R² = {r2_score:.2f}')
 
-    return modelo, y_pred, rmse_score, r2_score, mae_score
+    return modelo, y_pred, rmse_score, mae_score, r2_score
 
 def definir_regularizacion(X_train:pd.DataFrame, y_train:pd.Series, X_val:pd.DataFrame, y_val:pd.Series, lambdas:list[float]) -> pd.DataFrame:
     """
