@@ -76,7 +76,6 @@ def ver_outliers(dataset: pd.DataFrame, col: str = "Precio", n: int = 50) -> pd.
         dataset[dataset[flag_col] == 1].sort_values(col, ascending=False)[columnas].head(n))
 
     display(outliers)
-    #return outliers
 
 def eliminar_outliers_grupo(dataset: pd.DataFrame, col: str = "Precio") -> pd.DataFrame:
     flag_col = f"outlier_{col.lower().replace(' ', '_')}_grupo"
