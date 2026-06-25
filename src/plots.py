@@ -393,8 +393,6 @@ def plot_dispersion_por_marca(df, target="Precio", min_muestras=35, top_n=15):
     plt.tight_layout()
     plt.show()
 
-    return cv.sort_values("cv")
-
 
 #PARA OUTLIERS
 def plot_boxplots_por_grupo(
