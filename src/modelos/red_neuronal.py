@@ -336,7 +336,7 @@ def buscar_mejor_red_neuronal(
 
     resultados_df = (
         pd.DataFrame(resultados)
-        .sort_values("RMSE", ascending=True)
+        .sort_values("RMSE (USD)", ascending=True)
         .reset_index(drop=True)
     )
 

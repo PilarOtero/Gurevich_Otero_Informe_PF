@@ -488,3 +488,71 @@ def plot_grupo_especifico(dataset: pd.DataFrame, grupo: str, grupo_col: str = "M
     plt.show()
 
     return outliers
+
+def plot_rmse_train_val(
+    comparacion_train_val,
+    titulo="Comparación RMSE Train vs Validation",
+    figsize=(9, 5)
+):
+    """
+    Grafica el RMSE de entrenamiento y validación de distintos modelos.
+    """
+
+    (
+        comparacion_train_val
+        .set_index("Modelo")[["RMSE Train", "RMSE Val"]]
+        .plot(
+            kind="bar",
+            figsize=figsize,
+            rot=0
+        )
+    )
+
+    plt.title(titulo)
+    plt.ylabel("RMSE (USD)")
+    plt.xlabel("")
+    plt.grid(axis="y", alpha=0.3)
+
+    plt.tight_layout()
+    plt.show()
+
+
+
+def plot_curvas_entrenamiento(
+    historial,
+    desde_epoca=5,
+    titulo="Curvas de entrenamiento y validación",
+    figsize=(9,5)
+):
+    """
+    Grafica las curvas de pérdida de entrenamiento y validación
+    para una red neuronal.
+    """
+
+    historial = historial[historial["epoch"] >= desde_epoca]
+
+    plt.figure(figsize=figsize)
+
+    plt.plot(
+        historial["epoch"],
+        historial["train_loss_log"],
+        label="Entrenamiento",
+        linewidth=2
+    )
+
+    plt.plot(
+        historial["epoch"],
+        historial["val_loss_log"],
+        label="Validación",
+        linewidth=2
+    )
+
+    plt.title(titulo)
+    plt.xlabel("Época")
+    plt.ylabel("Loss (MSE sobre log(Precio))")
+
+    plt.grid(alpha=0.3)
+    plt.legend()
+
+    plt.tight_layout()
+    plt.show()

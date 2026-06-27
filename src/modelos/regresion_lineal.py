@@ -56,7 +56,7 @@ def definir_regularizacion(X_train:pd.DataFrame, y_train:pd.Series, X_val:pd.Dat
 
     for lambda_ in lambdas:
         for nombre, modelo in [('Ridge', Ridge(alpha = lambda_, solver = 'svd')), ('Lasso', Lasso(alpha = lambda_, max_iter = 50000))]:
-            modelo_entranado, predicciones, rmse_score, r2_score, mae_score = entrenar_regresion_lineal(X_train, y_train, X_val, y_val, modelo = modelo)
+            modelo_entranado, predicciones, rmse_score, mae_score, r2_score = entrenar_regresion_lineal(X_train, y_train, X_val, y_val, modelo = modelo)
             resultados.append({'Modelo': nombre, 'Lambda': lambda_, 'RMSE': rmse_score, 'MAE': mae_score, 'R2': r2_score})
     
-    return pd.DataFrame(resultados).sort_values('R2', ascending = False)
+    return pd.DataFrame(resultados).sort_values(["RMSE", "R2"], ascending = [True, False])

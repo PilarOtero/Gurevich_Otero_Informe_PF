@@ -4,7 +4,7 @@ from xgboost import XGBRegressor
 from sklearn.model_selection import KFold
 from src.metrics import r2, rmse, mae
 
-def entrenar_xgboost(X_train, y_train, X_val, y_val, print_ = True, n_estimators = None, max_depth = None, learning_rate = None):
+def entrenar_xgboost(X_train, y_train, X_val, y_val, print_ = False, n_estimators = None, max_depth = None, learning_rate = None):
     columnas_categoricas = [col for col in X_train.select_dtypes(include = ['object', 'category']).columns]
     for col in columnas_categoricas:
         X_train[col] = X_train[col].astype('category')
@@ -29,7 +29,7 @@ def entrenar_xgboost(X_train, y_train, X_val, y_val, print_ = True, n_estimators
 
     return modelo, y_pred, round(rmse_score, 2), round(mae_score, 2), round(r2_score, 4)
 
-def entrenar_xgboost_ohe(X_train, y_train, X_val, y_val, print_ = True,  n_estimators = None, max_depth = None, learning_rate = None):
+def entrenar_xgboost_ohe(X_train, y_train, X_val, y_val, print_ = False,  n_estimators = None, max_depth = None, learning_rate = None):
     modelo = XGBRegressor(random_state = 42, n_estimators = n_estimators if n_estimators is not None else 100, 
                           max_depth = max_depth if max_depth is not None else 6, 
                           learning_rate = learning_rate if learning_rate is not None else 0.3)
