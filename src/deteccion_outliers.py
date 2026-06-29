@@ -4,14 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from IPython.display import display
 
-def flagear_outliers_por_grupo(
-    dataset: pd.DataFrame,
-    grupo_col: str = "Marca_Modelo",
-    col: str = "Precio",
-    k: float = 1.5,
-    min_registros: int = 20
-) -> pd.DataFrame:
-
+def flagear_outliers_por_grupo(dataset: pd.DataFrame, grupo_col: str = "Marca_Modelo", col: str = "Precio", k: float = 1.5, min_registros: int = 20) -> pd.DataFrame:
     dataset = dataset.copy()
     flag_col = f"outlier_{col.lower().replace(' ', '_')}_grupo"
     dataset[flag_col] = 0
@@ -19,7 +12,6 @@ def flagear_outliers_por_grupo(
     grupos_chicos = []
 
     for grupo, idx in dataset.groupby(grupo_col).groups.items():
-
         if len(idx) < min_registros:
             grupos_chicos.append(grupo)
             continue
@@ -58,7 +50,6 @@ def reportar_outliers_por_grupo(dataset: pd.DataFrame, grupo_col: str = "Marca_M
         )
         .sort_values("n_outliers", ascending=False).head(top_n))
 
-    #display(resumen.round(2))
     return resumen
 
 def ver_outliers(dataset: pd.DataFrame, col: str = "Precio", n: int = 50) -> pd.DataFrame:

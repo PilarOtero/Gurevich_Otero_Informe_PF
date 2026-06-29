@@ -2,17 +2,17 @@ import numpy as np
 
 def estandarizar(X_train:np.ndarray, X_val:np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
-    Standarization of the data using the mean and standard deviation computed from the training set - > X_norm = (X - μ) / σ
+    Estandarización de la información utilizando la media y el desvío estandar calculados sobre el set de entrenamiento -> X_normalizado = (X - μ) / σ
 
-        Entry parameters:
-            X_train(np.ndarray): training feature matrix of shape (n_samples, n_samples)
-            X_val(np.ndarray): evaluation feature matrix of shape (n_samples, n_samples)
+        Parámetros de entrada:
+            X_train(np.ndarray): matriz de features de entrenamiento 
+            X_val(np.ndarray): matriz de features de validación
 
-        Output parameters:
-            X_train(np.ndarray): standarized training feature matrix of shape
-            X_val(np.ndarray): standarized test feature matrix of shape
-            mean(np.ndarray): mean per feature computed from the training set
-            std(np.ndarray): standard deviation per feature computed from the training set
+        Parámetros de salida:
+            X_train(np.ndarray): matriz de entrenamiento estandarizada 
+            X_val(np.ndarray): matriz de validación estandarizada 
+            mean(np.ndarray): media por feature obtenida del set de entrenamiento
+            std(np.ndarray): desvío estandar por feature obtenido del set de entrenamiento
     """
     mean = X_train.mean(axis = 0)
     

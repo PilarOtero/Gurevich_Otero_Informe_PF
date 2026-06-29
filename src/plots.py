@@ -393,33 +393,24 @@ def plot_dispersion_por_marca(df, target="Precio", min_muestras=35, top_n=15):
     plt.tight_layout()
     plt.show()
 
-
 #PARA OUTLIERS
-def plot_boxplots_por_grupo(
-    dataset: pd.DataFrame,
-    grupo_col: str = "Marca_Modelo",
-    col: str = "Precio",
-    top_n: int = 12
-) -> None:
-
+def plot_boxplots_por_grupo(dataset: pd.DataFrame, grupo_col: str = "Marca_Modelo", col: str = "Precio", top_n: int = 12):
     top_grupos = dataset[grupo_col].value_counts().head(top_n).index
     df_top = dataset[dataset[grupo_col].isin(top_grupos)].copy()
 
-    orden = (
-        df_top.groupby(grupo_col)[col]
+    orden = (df_top.groupby(grupo_col)[col]
         .median()
         .sort_values(ascending=False)
         .index
     )
 
     plt.figure(figsize=(14, 6))
-
     sns.boxplot(
         data=df_top,
-        x=grupo_col,
-        y=col,
-        order=orden,
-        color="lightsteelblue"
+        x = grupo_col,
+        y = col,
+        order = orden,
+        color = "lightsteelblue"
     )
 
     plt.xticks(rotation=40, ha="right")
@@ -428,7 +419,6 @@ def plot_boxplots_por_grupo(
     plt.ylabel(col)
     plt.tight_layout()
     plt.show()
-
 
 def plot_grupo_especifico(dataset: pd.DataFrame, grupo: str, grupo_col: str = "Marca_Modelo", col: str = "Precio", k: float = 1.5) -> pd.DataFrame:
     data_grupo = dataset[dataset[grupo_col] == grupo].copy()
@@ -457,17 +447,6 @@ def plot_grupo_especifico(dataset: pd.DataFrame, grupo: str, grupo_col: str = "M
     print(f"Rango válido: [{limite_inf:,.2f}, {limite_sup:,.2f}]")
     print(f"Outliers detectados: {len(outliers)}")
 
-    #columnas = [
-    #    c for c in [
-    #        "Marca_Modelo",
-    #        "Precio",
-    #        "Año",
-    #        "Kilómetros",
-    #        "Motor_Litros",
-    #        "0km"
-    #    ]
-    #    if c in data_grupo.columns]
-
     fig, axes = plt.subplots(1, 2, figsize=(11, 4))
 
     sns.histplot(valores, bins=30, kde=True, color="lightsteelblue", ax=axes[0])
@@ -489,19 +468,11 @@ def plot_grupo_especifico(dataset: pd.DataFrame, grupo: str, grupo_col: str = "M
 
     return outliers
 
-def plot_rmse_train_val(
-    comparacion_train_val,
-    titulo="Comparación RMSE Train vs Validation",
-    figsize=(9, 5)
-):
+def plot_rmse_train_val(comparacion_train_val, titulo = "Comparación RMSE Train vs Validation", figsize = (9, 5)):
     """
     Grafica el RMSE de entrenamiento y validación de distintos modelos.
     """
-
-    (
-        comparacion_train_val
-        .set_index("Modelo")[["RMSE Train", "RMSE Val"]]
-        .plot(
+    (comparacion_train_val.set_index("Modelo")[["RMSE Train", "RMSE Val"]].plot(
             kind="bar",
             figsize=figsize,
             rot=0
@@ -516,36 +487,26 @@ def plot_rmse_train_val(
     plt.tight_layout()
     plt.show()
 
-
-
-def plot_curvas_entrenamiento(
-    historial,
-    desde_epoca=5,
-    titulo="Curvas de entrenamiento y validación",
-    figsize=(9,5)
-):
+def plot_curvas_aprendizaje_rn(historial, desde_epoca = 5, titulo = "Curvas de entrenamiento y validación",figsize=(9,5)):
     """
     Grafica las curvas de pérdida de entrenamiento y validación
     para una red neuronal.
     """
-
     historial = historial[historial["epoch"] >= desde_epoca]
 
-    plt.figure(figsize=figsize)
+    plt.figure(figsize = figsize)
 
     plt.plot(
         historial["epoch"],
         historial["train_loss_log"],
-        label="Entrenamiento",
-        linewidth=2
-    )
+        label = "Entrenamiento",
+        linewidth = 2)
 
     plt.plot(
         historial["epoch"],
         historial["val_loss_log"],
-        label="Validación",
-        linewidth=2
-    )
+        label = "Validación",
+        linewidth = 2)
 
     plt.title(titulo)
     plt.xlabel("Época")
@@ -555,4 +516,26 @@ def plot_curvas_entrenamiento(
     plt.legend()
 
     plt.tight_layout()
+    plt.show()
+
+def plot_curvas_aprendizaje_xgboost(historial, desde_arbol = 5, titulo = 'Curvas de entrenamiento y validacion', figsize = (9,5)):
+    historial = historial[historial['Arbol'] >= desde_arbol]
+    plt.figure(figsize = figsize)
+    plt.plot(historial['Arbol'], 
+             historial['train_rmse'], 
+             label = 'Entrenamiento', 
+             linewidth = 2)
+    
+    plt.plot(historial['Arbol'], 
+             historial['val_rmse'], 
+             label = 'Validacion', 
+             linewidth = 2)
+    
+    plt.title(titulo)
+    plt.xlabel('Numero de arboles')
+    plt.ylabel('RMSE (USD)')
+    
+    plt.grid()
+    plt.tight_layout()
+    plt.legend()
     plt.show()

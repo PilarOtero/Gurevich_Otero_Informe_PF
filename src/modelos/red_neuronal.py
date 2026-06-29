@@ -25,14 +25,7 @@ def get_activaciones(nombre):
         return ValueError("ACTIVACION NO SOPORTADA")
     
 class MLP(nn.Module):
-    def __init__(
-        self,
-        in_dim: int,
-        capas_ocultas: list[int],
-        activacion: str = "relu",
-        dropout: float = 0.0,
-        batchnorm: bool = False
-    ):
+    def __init__(self, in_dim: int, capas_ocultas: list[int], activacion: str = "relu", dropout: float = 0.0, batchnorm: bool = False):
         super().__init__()
 
         capas = []
@@ -52,12 +45,10 @@ class MLP(nn.Module):
             dim_actual = h
 
         capas.append(nn.Linear(dim_actual, 1))
-
         self.net = nn.Sequential(*capas)
 
     def forward(self, x):
         return self.net(x).squeeze(1)
-
 
 def evaluar_MLP(modelo, loader, criterio, device):
     modelo.eval()
@@ -112,17 +103,16 @@ def entrenar_red_neuronal(
     batch_size=256,
     alpha=1e-3,
     scheduler=None,
-    c=0.8,
-    s=40,
-    alpha_min=1e-5,
-    weight_decay=1e-4,
-    usar_early_stop=True,
-    paciencia=20,
-    min_delta=1e-4,
-    gradient_clip=1.0,
-    random_state=42,
-    mostrar=True
-):
+    c = 0.8,
+    s = 40,
+    alpha_min = 1e-5,
+    weight_decay = 1e-4,
+    usar_early_stop = True,
+    paciencia = 20,
+    min_delta = 1e-4,
+    gradient_clip = 1.0,
+    random_state = 42,
+    mostrar = True):
     torch.manual_seed(random_state)
     np.random.seed(random_state)
 
@@ -139,16 +129,14 @@ def entrenar_red_neuronal(
     y_train_t = torch.tensor(y_train_log, dtype=torch.float32)
     y_val_t = torch.tensor(y_val_log, dtype=torch.float32)
 
-    train_loader = DataLoader(
-        TensorDataset(X_train_t, y_train_t),
-        batch_size=batch_size,
-        shuffle=True
+    train_loader = DataLoader(TensorDataset(X_train_t, y_train_t),
+        batch_size = batch_size,
+        shuffle = True
     )
 
-    val_loader = DataLoader(
-        TensorDataset(X_val_t, y_val_t),
-        batch_size=batch_size,
-        shuffle=False
+    val_loader = DataLoader(TensorDataset(X_val_t, y_val_t),
+        batch_size = batch_size,
+        shuffle = False
     )
 
     modelo = MLP(
@@ -159,12 +147,11 @@ def entrenar_red_neuronal(
         batchnorm=batchnorm
     ).to(device)
 
-    criterio = nn.MSELoss() #FUNCION DE LOSS PARA regresion-> mide error cuadratico en escala log
+    criterio = nn.MSELoss() 
 
-    optimizador = torch.optim.Adam(
-        modelo.parameters(),
-        lr=alpha,
-        weight_decay=weight_decay
+    optimizador = torch.optim.Adam(modelo.parameters(),
+        lr = alpha,
+        weight_decay = weight_decay
     )
 
     train_losses = []
@@ -181,7 +168,6 @@ def entrenar_red_neuronal(
     inicio = time.time()
 
     for epoch in range(epochs):
-
         if scheduler == "expo":
             alpha_epoch = max(alpha * (c ** (epoch / s)), alpha_min)
         else:
@@ -277,9 +263,9 @@ def buscar_mejor_red_neuronal(
     X_val,
     y_val,
     configuraciones: list[dict],
-    epochs=200,
-    batch_size=256,
-    random_state=42
+    epochs = 200,
+    batch_size = 256,
+    random_state = 42
 ):
     resultados = []
     modelos = {}
@@ -289,30 +275,29 @@ def buscar_mejor_red_neuronal(
     for i, config in enumerate(configuraciones):
         nombre = config.get("nombre", f"NN_{i + 1}")
 
-        print(f"\nEntrenando {nombre}")
-        #print(config)
+        print(f"Entrenando {nombre}...")
 
         modelo, y_pred, historial, metricas = entrenar_red_neuronal(
-            X_train=X_train,
-            y_train=y_train,
-            X_val=X_val,
-            y_val=y_val,
-            capas_ocultas=config.get("capas_ocultas", [256, 128]),
-            activacion=config.get("activacion", "relu"),
-            dropout=config.get("dropout", 0.2),
-            batchnorm=config.get("batchnorm", True),
-            alpha=config.get("alpha", 1e-3),
-            scheduler=config.get("scheduler", "expo"),
-            c=config.get("c", 0.8),
-            s=config.get("s", 40),
-            alpha_min=config.get("alpha_min", 1e-5),
-            weight_decay=config.get("weight_decay", 1e-4),
-            gradient_clip=config.get("gradient_clip", 1.0),
-            paciencia=config.get("paciencia", 20),
-            epochs=epochs,
-            batch_size=batch_size,
-            random_state=random_state,
-            mostrar=False
+            X_train = X_train,
+            y_train = y_train,
+            X_val = X_val,
+            y_val = y_val,
+            capas_ocultas = config.get("capas_ocultas", [256, 128]),
+            activacion = config.get("activacion", "relu"),
+            dropout = config.get("dropout", 0.2),
+            batchnorm = config.get("batchnorm", True),
+            alpha = config.get("alpha", 1e-3),
+            scheduler = config.get("scheduler", "expo"),
+            c = config.get("c", 0.8),
+            s = config.get("s", 40),
+            alpha_min = config.get("alpha_min", 1e-5),
+            weight_decay = config.get("weight_decay", 1e-4),
+            gradient_clip = config.get("gradient_clip", 1.0),
+            paciencia = config.get("paciencia", 20),
+            epochs = epochs,
+            batch_size = batch_size,
+            random_state = random_state,
+            mostrar = False
         )
 
         resultados.append({

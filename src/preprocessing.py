@@ -682,6 +682,7 @@ def completar_motor_litros(X_train: pd.DataFrame, X_val: pd.DataFrame) -> tuple[
 
     return X_train, X_val
 
+"""
 def agregar_tf_idf(descripcion_train, descripcion_val, X_train, X_val, n_componentes = 20, max_palabras_vocab = 300):
     tfidf = TfidfVectorizer(max_features = max_palabras_vocab)
     X_descripcion_train = tfidf.fit_transform(descripcion_train.fillna(""))
@@ -699,7 +700,34 @@ def agregar_tf_idf(descripcion_train, descripcion_val, X_train, X_val, n_compone
     X_train_final = X_train_final.drop(columns = ['Descripción'])
     X_val_final = X_val_final.drop(columns = ['Descripción'])
 
-    return X_train_final, X_val_final
+    return X_train_final, X_val_final, tfidf, svd
+"""
+def agregar_tf_idf(descripcion_train, descripcion_val, X_train, X_val, n_componentes = 20, max_palabras_vocab = 300, tfidf = None, svd = None):
+    if tfidf is None:
+        tfidf = TfidfVectorizer(max_features = max_palabras_vocab)
+        X_descripcion_train = tfidf.fit_transform(descripcion_train.fillna(""))
+    else:
+        X_descripcion_train = tfidf.transform(descripcion_train.fillna(""))
+
+    X_descripcion_val = tfidf.transform(descripcion_val.fillna(""))
+
+    if svd is None:
+        svd = TruncatedSVD(n_components = n_componentes, random_state = 42)
+        X_descripcion_train_ = svd.fit_transform(X_descripcion_train)
+    else:
+        X_descripcion_train_ = svd.transform(X_descripcion_train)
+
+    X_descripcion_val_ = svd.transform(X_descripcion_val)
+
+    descripcion_cols = [f'Descripcion_{i}' for i in range(n_componentes)]
+
+    X_train_final = pd.concat([X_train.reset_index(drop = True), pd.DataFrame(X_descripcion_train_, columns = descripcion_cols)], axis = 1)
+    X_val_final = pd.concat([X_val.reset_index(drop = True), pd.DataFrame(X_descripcion_val_, columns = descripcion_cols)], axis = 1)
+
+    X_train_final = X_train_final.drop(columns = ['Descripción'])
+    X_val_final = X_val_final.drop(columns = ['Descripción'])
+
+    return X_train_final, X_val_final, tfidf, svd
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #FEATURE ENGINEERING
@@ -753,9 +781,9 @@ def preprocesamiento_post_split(X_train: pd.DataFrame, X_val: pd.DataFrame) -> t
     X_val = crear_features_autos(X_val)
 
     #Descripcion
-    X_train, X_val = agregar_tf_idf(X_train['Descripción'], X_val['Descripción'], X_train, X_val)
+    X_train, X_val, tfidf, svd = agregar_tf_idf(X_train['Descripción'], X_val['Descripción'], X_train, X_val)
 
-    return X_train, X_val
+    return X_train, X_val, tfidf, svd
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #ONE-HOT LUEGO DE TODO EL PREPROCESSING 
@@ -786,4 +814,4 @@ def onehot_encoding(X_train, X_val, categoricas) -> tuple[pd.DataFrame, pd.DataF
     X_train = pd.concat([X_train.drop(columns = categoricas), train_encoded], axis = 1)
     X_val = pd.concat([X_val.drop(columns = categoricas), val_encoded], axis = 1)
 
-    return X_train, X_val
+    return X_train, X_val, encoder

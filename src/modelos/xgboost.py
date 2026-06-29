@@ -12,9 +12,17 @@ def entrenar_xgboost(X_train, y_train, X_val, y_val, print_ = False, n_estimator
 
     modelo = XGBRegressor(enable_categorical = True, random_state = 42,  n_estimators = n_estimators if n_estimators is not None else 100, 
                           max_depth = max_depth if max_depth is not None else 6, 
-                          learning_rate = learning_rate if learning_rate is not None else 0.3)
+                          learning_rate = learning_rate if learning_rate is not None else 0.3,
+                          eval_metric = 'rmse')
     #Entrenar el arbol
-    modelo.fit(X_train, y_train)
+    modelo.fit(X_train, y_train, eval_set = [(X_train, y_train), (X_val, y_val)], verbose = False)
+    evals = modelo.evals_result()
+    historial = pd.DataFrame({
+        'Arbol': range(len(evals['validation_0']['rmse'])),
+        'train_rmse': evals['validation_0']['rmse'],
+        'val_rmse': evals['validation_1']['rmse']
+    })
+    
     y_pred = modelo.predict(X_val)
     
     #Métricas
@@ -27,15 +35,23 @@ def entrenar_xgboost(X_train, y_train, X_val, y_val, print_ = False, n_estimator
         print(f'MAE = {mae_score:.4f}')
         print(f'R² = {r2_score:.4f}')
 
-    return modelo, y_pred, round(rmse_score, 2), round(mae_score, 2), round(r2_score, 4)
+    return modelo, y_pred, round(rmse_score, 2), round(mae_score, 2), round(r2_score, 4), historial
 
 def entrenar_xgboost_ohe(X_train, y_train, X_val, y_val, print_ = False,  n_estimators = None, max_depth = None, learning_rate = None):
     modelo = XGBRegressor(random_state = 42, n_estimators = n_estimators if n_estimators is not None else 100, 
                           max_depth = max_depth if max_depth is not None else 6, 
-                          learning_rate = learning_rate if learning_rate is not None else 0.3)
+                          learning_rate = learning_rate if learning_rate is not None else 0.3,
+                          eval_metric = 'rmse')
 
     #Entrenar el arbol
-    modelo.fit(X_train, y_train)
+    modelo.fit(X_train, y_train, eval_set = [(X_train, y_train), (X_val, y_val)], verbose = False)
+    evals = modelo.evals_result()
+    historial = pd.DataFrame({
+        'Arbol': range(len(evals['validation_0']['rmse'])),
+        'train_rmse': evals['validation_0']['rmse'],
+        'val_rmse': evals['validation_1']['rmse']
+    })
+
     y_pred = modelo.predict(X_val)
 
     #Métricas
@@ -48,7 +64,7 @@ def entrenar_xgboost_ohe(X_train, y_train, X_val, y_val, print_ = False,  n_esti
         print(f'MAE = {mae_score:.4f}')
         print(f"R²:   {r2_score:.4f}")
 
-    return modelo, y_pred, round(rmse_score, 2), round(mae_score, 2), round(r2_score, 4)
+    return modelo, y_pred, round(rmse_score, 2), round(mae_score, 2), round(r2_score, 4), historial
 
 def grid_search(X_train, y_train, n_estimators_list, max_depth_list, learning_rate_list, categorico = True, folds = 5):
     kf = KFold(n_splits = folds, shuffle = True, random_state = 42)
