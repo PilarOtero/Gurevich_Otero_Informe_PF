@@ -5,6 +5,19 @@ import seaborn as sns
 from IPython.display import display
 
 def flagear_outliers_por_grupo(dataset: pd.DataFrame, grupo_col: str = "Marca_Modelo", col: str = "Precio", k: float = 1.5, min_registros: int = 20) -> pd.DataFrame:
+    """
+    Detecta outliers de la columna 'col' dentro de cada grupo (definido por 'grupo_col') utilizando el método del rango intercuartil (IQR), y agrega una columna de flag indicando cuáles registros son outliers.
+
+        Parámetros de entrada:
+            dataset(pd.DataFrame): dataset sobre el cual detectar los outliers
+            grupo_col(str): columna utilizada para agrupar los registros
+            col(str): columna sobre la cual calcular los outliers
+            k(float): multiplicador del IQR utilizado para definir los límites inferior y superior
+            min_registros(int): cantidad mínima de registros que debe tener un grupo para calcularle los límites; los grupos con menos registros no se filtran
+
+        Parámetros de salida:
+            dataset(pd.DataFrame): dataset original con una nueva columna 'outlier_{col}_grupo' (1 si es outlier, 0 si no)
+    """
     dataset = dataset.copy()
     flag_col = f"outlier_{col.lower().replace(' ', '_')}_grupo"
     dataset[flag_col] = 0
@@ -40,6 +53,18 @@ def flagear_outliers_por_grupo(dataset: pd.DataFrame, grupo_col: str = "Marca_Mo
     return dataset
 
 def reportar_outliers_por_grupo(dataset: pd.DataFrame, grupo_col: str = "Marca_Modelo", col: str = "Precio", top_n: int = 20) -> pd.DataFrame:
+    """
+    Arma un resumen de los grupos con más outliers detectados (a partir de la columna de flag generada por 'flagear_outliers_por_grupo'), mostrando cantidad de outliers y estadísticas de precio por grupo.
+
+        Parámetros de entrada:
+            dataset(pd.DataFrame): dataset con la columna de flag de outliers ya calculada
+            grupo_col(str): columna utilizada para agrupar los registros
+            col(str): columna sobre la cual se calcularon los outliers
+            top_n(int): cantidad de grupos a mostrar en el resumen, ordenados por cantidad de outliers
+
+        Parámetros de salida:
+            resumen(pd.DataFrame): tabla con la cantidad de outliers y el precio mínimo, máximo y mediana por grupo
+    """
     flag_col = f"outlier_{col.lower().replace(' ', '_')}_grupo"
 
     resumen = (dataset[dataset[flag_col] == 1].groupby(grupo_col).agg(
@@ -53,6 +78,17 @@ def reportar_outliers_por_grupo(dataset: pd.DataFrame, grupo_col: str = "Marca_M
     return resumen
 
 def ver_outliers(dataset: pd.DataFrame, col: str = "Precio", n: int = 50) -> pd.DataFrame:
+    """
+    Muestra (via IPython display) los registros flageados como outliers, ordenados de mayor a menor según 'col', junto con columnas descriptivas del vehículo.
+
+        Parámetros de entrada:
+            dataset(pd.DataFrame): dataset con la columna de flag de outliers ya calculada
+            col(str): columna sobre la cual se calcularon los outliers, y por la que se ordena la vista
+            n(int): cantidad máxima de registros a mostrar
+
+        Parámetros de salida:
+            None: la función no retorna nada, solo muestra la tabla de outliers por pantalla
+    """
     flag_col = f"outlier_{col.lower().replace(' ', '_')}_grupo"
 
     columnas = [
@@ -69,6 +105,16 @@ def ver_outliers(dataset: pd.DataFrame, col: str = "Precio", n: int = 50) -> pd.
     display(outliers)
 
 def eliminar_outliers_grupo(dataset: pd.DataFrame, col: str = "Precio") -> pd.DataFrame:
+    """
+    Elimina del dataset los registros flageados como outliers (a partir de la columna de flag generada por 'flagear_outliers_por_grupo'), y descarta dicha columna de flag.
+
+        Parámetros de entrada:
+            dataset(pd.DataFrame): dataset con la columna de flag de outliers ya calculada
+            col(str): columna sobre la cual se calcularon los outliers, utilizada para identificar la columna de flag correspondiente
+
+        Parámetros de salida:
+            dataset_limpio(pd.DataFrame): dataset sin los registros marcados como outliers ni la columna de flag
+    """
     flag_col = f"outlier_{col.lower().replace(' ', '_')}_grupo"
 
     if flag_col not in dataset.columns:
@@ -87,6 +133,16 @@ def eliminar_outliers_grupo(dataset: pd.DataFrame, col: str = "Precio") -> pd.Da
 
 
 def eliminar_outliers_por_corte(dataset: pd.DataFrame, precio_min: float = 5000) -> pd.DataFrame:
+    """
+    Elimina del dataset los registros cuyo precio sea menor o igual a un valor de corte fijo, sin considerar grupos.
+
+        Parámetros de entrada:
+            dataset(pd.DataFrame): dataset sobre el cual aplicar el corte
+            precio_min(float): precio mínimo (exclusivo) que debe tener un registro para conservarse
+
+        Parámetros de salida:
+            dataset_limpio(pd.DataFrame): dataset sin los registros con precio menor o igual a 'precio_min'
+    """
     dataset = dataset.copy()
 
     n_antes = len(dataset)
