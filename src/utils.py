@@ -46,13 +46,16 @@ def estandarizar(X_train:np.ndarray, X_val:np.ndarray) -> tuple[np.ndarray, np.n
 
 
 #funciones para TEST
-def preprocesar_test_masked(df):
+def preprocesar_test_masked(df: pd.DataFrame) -> tuple[pd.Series, pd.DataFrame]:
     """
-    Preprocesa el test masked sin eliminar filas.
+    Preprocesa el conjunto de test enmascarado (sin la columna Precio) aplicando las mismas transformaciones que en train, sin eliminar ninguna fila (los valores inválidos se reemplazan en lugar de descartarse).
 
-    Devuelve:
-    - ids: identificador original de cada muestra.
-    - df: matriz de features preprocesada para pasar luego por post_split.
+        Parámetros de entrada:
+            df(pd.DataFrame): dataset de test crudo, con la columna 'id' y sin la columna 'Precio'
+
+        Parámetros de salida:
+            ids(pd.Series): identificador original de cada muestra
+            df(pd.DataFrame): dataset preprocesado, listo para pasar por 'preprocesamiento_post_split'
     """
     df = df.copy()
     n_inicial = len(df)
@@ -99,10 +102,17 @@ def preprocesar_test_masked(df):
     return ids, df
 
 
-def preparar_xgboost_categorico(X_train, X_test):
+def preparar_xgboost_categorico(X_train: pd.DataFrame, X_test: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Convierte columnas categóricas a dtype category y alinea las categorías
-    de test con las de train.
+    Convierte a dtype 'category' las columnas categóricas del set de entrenamiento, y alinea las categorías del set de test con las de entrenamiento, para poder utilizar el soporte nativo de variables categóricas de XGBoost.
+
+        Parámetros de entrada:
+            X_train(pd.DataFrame): matriz de features de entrenamiento
+            X_test(pd.DataFrame): matriz de features de test
+
+        Parámetros de salida:
+            X_train(pd.DataFrame): matriz de entrenamiento con las columnas categóricas convertidas a 'category'
+            X_test(pd.DataFrame): matriz de test con las mismas columnas convertidas a 'category', usando las categorías de entrenamiento
     """
     X_train = X_train.copy()
     X_test = X_test.copy()
@@ -119,9 +129,17 @@ def preparar_xgboost_categorico(X_train, X_test):
     return X_train, X_test
 
 
-def entrenar_modelo_final_xgboost(X_full, y_full, mejor_combinacion):
+def entrenar_modelo_final_xgboost(X_full: pd.DataFrame, y_full: pd.Series, mejor_combinacion: dict) -> XGBRegressor:
     """
-    Entrena el modelo final usando todo el dataset etiquetado.
+    Entrena el modelo XGBoost final utilizando todo el dataset etiquetado disponible (train + validación), con la mejor combinación de hiperparámetros encontrada durante la búsqueda.
+
+        Parámetros de entrada:
+            X_full(pd.DataFrame): matriz de features de todo el dataset etiquetado
+            y_full(pd.Series): precio real de todo el dataset etiquetado
+            mejor_combinacion(dict): combinación de hiperparámetros a utilizar (n_estimators, max_depth, learning_rate)
+
+        Parámetros de salida:
+            modelo(XGBRegressor): modelo XGBoost entrenado sobre todo el dataset
     """
     modelo = XGBRegressor(
         enable_categorical=True,
@@ -137,18 +155,24 @@ def entrenar_modelo_final_xgboost(X_full, y_full, mejor_combinacion):
     return modelo
 
 def guardar_entrega_predicciones_suv(
-    predicciones,
-    n_esperado=4456,
-    nombre_csv="Gurevich_Otero_XGBoost_predictions.csv",
-    nombre_zip="Gurevich_Otero_Predictions_PF_SUV.zip"
-):
+    predicciones: np.ndarray,
+    n_esperado: int = 4456,
+    nombre_csv: str = "Gurevich_Otero_XGBoost_predictions.csv",
+    nombre_zip: str = "Gurevich_Otero_Predictions_PF_SUV.zip"
+) -> tuple[pd.DataFrame, Path, Path]:
     """
-    Guarda las predicciones en el formato pedido por la cátedra:
+    Guarda las predicciones finales en el formato pedido por la cátedra (columnas 'id' y 'Predicted_Price_USD'), tanto en un CSV como comprimidas en un ZIP, validando la cantidad de predicciones, el shape y que no haya valores nulos.
 
-    id,Predicted_Price_USD
-    0,9950.0
-    1,11500.0
-    ...
+        Parámetros de entrada:
+            predicciones(np.ndarray): predicciones de precio para el conjunto de test
+            n_esperado(int): cantidad de predicciones esperadas; si no coincide, se lanza un error
+            nombre_csv(str): nombre (o ruta) del archivo CSV a generar
+            nombre_zip(str): nombre (o ruta) del archivo ZIP a generar
+
+        Parámetros de salida:
+            df_pred(pd.DataFrame): dataframe con las columnas 'id' y 'Predicted_Price_USD' generado
+            nombre_csv(Path): ruta del archivo CSV generado
+            nombre_zip(Path): ruta del archivo ZIP generado
     """
     nombre_csv = Path(nombre_csv)
     nombre_zip = Path(nombre_zip)
