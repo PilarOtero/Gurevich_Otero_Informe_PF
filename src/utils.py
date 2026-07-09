@@ -1,4 +1,23 @@
+import zipfile
+
 import numpy as np
+import pandas as pd
+
+from pathlib import Path
+from xgboost import XGBRegressor
+from IPython.display import display
+
+from src.preprocessing import (
+    corregir_marcas,
+    crear_marca_modelo,
+    pasar_kilometros_numerico,
+    crear_0km,
+    tratar_motor,
+    completar_color_descripcion,
+    unir_colores,
+    clasificar_version,
+    tratar_camara_retroceso,
+)
 
 def estandarizar(X_train:np.ndarray, X_val:np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
@@ -24,3 +43,149 @@ def estandarizar(X_train:np.ndarray, X_val:np.ndarray) -> tuple[np.ndarray, np.n
     X_val = (X_val - mean) / std
 
     return X_train, X_val, mean, std
+
+
+#funciones para TEST
+def preprocesar_test_masked(df):
+    """
+    Preprocesa el test masked sin eliminar filas.
+
+    Devuelve:
+    - ids: identificador original de cada muestra.
+    - df: matriz de features preprocesada para pasar luego por post_split.
+    """
+    df = df.copy()
+    n_inicial = len(df)
+
+    ids = df["id"].copy()
+
+    df = df.drop(
+        columns=["id", "Unnamed: 0", "Tipo de carrocería", "Título"],
+        errors="ignore"
+    )
+
+    # Mismas correcciones usadas en train
+    df = corregir_marcas(df)
+    df = crear_marca_modelo(df)
+
+    # En test no eliminamos filas: valores inválidos pasan a 5
+    df["Puertas"] = pd.to_numeric(df["Puertas"], errors="coerce")
+    df["Puertas"] = np.where(df["Puertas"].isin([3, 5]), df["Puertas"], 5)
+
+    df = pasar_kilometros_numerico(df)
+    df = crear_0km(df)
+
+    # En test no dropeamos Motor nulo
+    df["Motor"] = df["Motor"].fillna("")
+    df = tratar_motor(df)
+
+    # Asegurar que Descripción no tenga nulos
+    df["Descripción"] = df["Descripción"].fillna("")
+
+    df = completar_color_descripcion(df)
+    df = unir_colores(df)
+
+    # En train Moneda se usó para convertir Precio; en test no hay Precio
+    df = df.drop(columns=["Moneda"], errors="ignore")
+
+    df = clasificar_version(df)
+    df = tratar_camara_retroceso(df)
+
+    if len(df) != n_inicial:
+        raise ValueError(
+            f"Error: se perdieron filas en test. Antes: {n_inicial}, después: {len(df)}"
+        )
+
+    return ids, df
+
+
+def preparar_xgboost_categorico(X_train, X_test):
+    """
+    Convierte columnas categóricas a dtype category y alinea las categorías
+    de test con las de train.
+    """
+    X_train = X_train.copy()
+    X_test = X_test.copy()
+
+    columnas_categoricas = X_train.select_dtypes(include=["object", "category"]).columns
+
+    for col in columnas_categoricas:
+        X_train[col] = X_train[col].astype("category")
+        X_test[col] = pd.Categorical(
+            X_test[col],
+            categories=X_train[col].cat.categories
+        )
+
+    return X_train, X_test
+
+
+def entrenar_modelo_final_xgboost(X_full, y_full, mejor_combinacion):
+    """
+    Entrena el modelo final usando todo el dataset etiquetado.
+    """
+    modelo = XGBRegressor(
+        enable_categorical=True,
+        random_state=42,
+        n_estimators=int(mejor_combinacion["n_estimators"]),
+        max_depth=int(mejor_combinacion["max_depth"]),
+        learning_rate=float(mejor_combinacion["learning_rate"]),
+        eval_metric="rmse",
+    )
+
+    modelo.fit(X_full, y_full, verbose=False)
+
+    return modelo
+
+def guardar_entrega_predicciones_suv(
+    predicciones,
+    n_esperado=4456,
+    nombre_csv="Gurevich_Otero_XGBoost_predictions.csv",
+    nombre_zip="Gurevich_Otero_Predictions_PF_SUV.zip"
+):
+    """
+    Guarda las predicciones en el formato pedido por la cátedra:
+
+    id,Predicted_Price_USD
+    0,9950.0
+    1,11500.0
+    ...
+    """
+    nombre_csv = Path(nombre_csv)
+    nombre_zip = Path(nombre_zip)
+
+    predicciones = np.asarray(predicciones)
+
+    if len(predicciones) != n_esperado:
+        raise ValueError(
+            f"La cantidad de predicciones no coincide: "
+            f"{len(predicciones)} en vez de {n_esperado}."
+        )
+
+    df_pred = pd.DataFrame({
+        "id": np.arange(n_esperado),
+        "Predicted_Price_USD": predicciones
+    })
+
+    if df_pred.shape != (n_esperado, 2):
+        raise ValueError(f"Shape incorrecto: {df_pred.shape}")
+
+    if df_pred["Predicted_Price_USD"].isna().sum() > 0:
+        raise ValueError("Hay predicciones nulas.")
+
+    nombre_csv.parent.mkdir(parents=True, exist_ok=True)
+    nombre_zip.parent.mkdir(parents=True, exist_ok=True)
+
+    df_pred.to_csv(nombre_csv, index=False)
+
+    with zipfile.ZipFile(nombre_zip, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        zf.write(nombre_csv, arcname=nombre_csv.name)
+
+    print("Entrega generada correctamente.")
+    print(f"CSV: {nombre_csv}")
+    print(f"ZIP: {nombre_zip}")
+    print(f"Shape CSV: {df_pred.shape}")
+
+    display(df_pred.head())
+    display(df_pred.tail())
+
+    return df_pred, nombre_csv, nombre_zip

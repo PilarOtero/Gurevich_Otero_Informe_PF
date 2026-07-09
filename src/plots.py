@@ -539,3 +539,6 @@ def plot_curvas_aprendizaje_xgboost(historial, desde_arbol = 5, titulo = 'Curvas
     plt.tight_layout()
     plt.legend()
     plt.show()
+
+
+    
